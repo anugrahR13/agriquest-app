@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: agriquest-app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://agriquest_user:agriquest_password@postgres:5432/agriquest_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - agriquest-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: agriquest-db
+    environment:
+      POSTGRES_DB: agriquest_db
+      POSTGRES_USER: agriquest_user
+      POSTGRES_PASSWORD: agriquest_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agriquest_user -d agriquest_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - agriquest-network
+
+volumes:
+  postgres_data:
+
+networks:
+  agriquest-network:
+    driver: bridge

@@ -1,0 +1,829 @@
+// AgriQuest - Gamified Sustainable Farming Platform Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User roles enum
+enum Role {
+  FARMER
+  ADMIN
+  MODERATOR
+}
+
+// Mission status enum
+enum MissionStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+// Reward type enum
+enum RewardType {
+  POINTS
+  BADGE
+  COUPON
+  TRAINING_CREDIT
+  CERTIFICATE
+}
+
+// Badge type enum
+enum BadgeType {
+  ACHIEVEMENT
+  MILESTONE
+  SEASONAL
+  COMMUNITY
+  EXPERT
+}
+
+// Post status enum
+enum PostStatus {
+  PUBLISHED
+  PENDING
+  REJECTED
+  FLAGGED
+}
+
+// Crop categories enum
+enum CropCategory {
+  CEREALS
+  PULSES
+  OILSEEDS
+  VEGETABLES
+  FRUITS
+  SPICES
+  CASH_CROPS
+  FODDER
+}
+
+// Season enum
+enum Season {
+  KHARIF      // June-October
+  RABI        // November-April
+  ZAID        // May-June
+  PERENNIAL   // Year-round
+}
+
+// Crop types
+enum CropType {
+  WHEAT
+  RICE
+  MAIZE
+  SUGARCANE
+  COTTON
+  PULSES
+  OILSEEDS
+  VEGETABLES
+  FRUITS
+  SPICES
+}
+
+// Growth stages for crops
+enum GrowthStage {
+  SOWING
+  SPRouting
+  TILLERING
+  FLOWERING
+  HARVEST
+}
+
+// Ticket status for help desk
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+// Ticket priority for help desk
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Users table - base for all user types
+model User {
+  id                String    @id @default(cuid())
+  phone             String    @unique
+  phoneVerified     Boolean   @default(false)
+  firstName         String?
+  lastName          String?
+  profileImage      String?
+  role              Role      @default(FARMER)
+  isActive          Boolean   @default(true)
+  preferredLanguage String    @default("en")
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  farmer            Farmer?
+  adminProfile      AdminProfile?
+  farmProfiles      FarmProfile[]
+  otpCodes          OtpCode[]
+  sentNotifications Notification[] @relation("NotificationSender")
+  receivedNotifications Notification[] @relation("NotificationReceiver")
+  posts             Post[]
+  postLikes         PostLike[]
+  postComments      PostComment[]
+  moderationActions ModerationAction[]
+  assignedTickets   HelpDeskTicket[] @relation("HelpDeskAssignee")
+  helpDeskMessages  HelpDeskMessage[]
+
+  @@map("users")
+}
+
+// OTP codes for phone verification
+model OtpCode {
+  id          String   @id @default(cuid())
+  userId      String
+  phone       String
+  code        String
+  purpose     String   @default("login") // login, register, reset
+  isUsed      Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_codes")
+}
+
+// Farmer profiles
+model Farmer {
+  id                    String         @id @default(cuid())
+  userId                String         @unique
+  farmerId              String         @unique // Human-readable farmer ID
+  farmName              String?
+  region                String         // State/District
+  village               String?
+  panchayat             String?
+  farmSize              Decimal?       @db.Decimal(8,2) // in acres
+  primaryCrops          CropCategory[] @default([])
+  secondaryCrops        CropCategory[] @default([])
+  farmingExperience     Int?           // years
+  educationLevel        String?
+  totalPoints           Int            @default(0)
+  currentStreak         Int            @default(0)
+  longestStreak         Int            @default(0)
+  sustainabilityScore   Decimal        @default(0) @db.Decimal(5,2)
+  level                 Int            @default(1)
+  isVerified            Boolean        @default(false)
+  verifiedAt            DateTime?
+  bio                   String?
+  achievements          Json           @default("[]")
+  preferences           Json           @default("{}")
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  // Relations
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  crops                 FarmerCrop[]
+  missions              FarmerMission[]
+  rewards               FarmerReward[]
+  badges                FarmerBadge[]
+  posts                 Post[]
+  leaderboardEntries    LeaderboardEntry[]
+  helpDeskTickets       HelpDeskTicket[]
+  cropCreditReports     CropCreditReport[]
+  farmProfiles          FarmProfile[]
+
+  @@map("farmers")
+}
+
+// Admin profiles
+model AdminProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  department      String?
+  permissions     Json     @default("{}")
+  canCreateMissions Boolean @default(true)
+  canModerate     Boolean  @default(true)
+  canManageUsers  Boolean  @default(false)
+  canViewAnalytics Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdMissions Mission[]
+  createdRewards  Reward[]
+
+  @@map("admin_profiles")
+}
+
+// Mission templates
+model Mission {
+  id                String         @id @default(cuid())
+  title             String
+  description       String
+  shortDescription  String?
+  instructions      Json           @default("[]") // Step-by-step instructions
+  category          String         // Water conservation, Organic farming, etc.
+  targetCrops       CropCategory[] @default([])
+  targetRegions     String[]       @default([]) // States/districts
+  targetSeason      Season?
+  difficulty        String         @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED
+  estimatedDuration Int            // days
+  pointsReward      Int            @default(0)
+  isActive          Boolean        @default(true)
+  prerequisites     Json           @default("[]") // Required conditions
+  resources         Json           @default("[]") // Links, documents, videos
+  verificationSteps Json           @default("[]") // How to verify completion
+  tags              String[]       @default([])
+  imageUrl          String?
+  videoUrl          String?
+  createdById       String
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relations
+  createdBy         AdminProfile   @relation(fields: [createdById], references: [id])
+  farmerMissions    FarmerMission[]
+
+  @@map("missions")
+}
+
+// Individual farmer mission assignments
+model FarmerMission {
+  id              String        @id @default(cuid())
+  farmerId        String
+  missionId       String
+  status          MissionStatus @default(ASSIGNED)
+  assignedAt      DateTime      @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  dueDate         DateTime?
+  progress        Json          @default("{}")
+  evidenceSubmitted Json        @default("[]") // Photos, notes, etc.
+  verificationData Json         @default("{}")
+  pointsEarned    Int           @default(0)
+  bonusPoints     Int           @default(0)
+  feedback        String?
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  farmer          Farmer        @relation(fields: [farmerId], references: [id])
+  mission         Mission       @relation(fields: [missionId], references: [id])
+
+  @@unique([farmerId, missionId])
+  @@map("farmer_missions")
+}
+
+// Rewards catalog
+model Reward {
+  id              String     @id @default(cuid())
+  title           String
+  description     String
+  type            RewardType
+  pointsCost      Int        @default(0)
+  value           Decimal?   @db.Decimal(10,2) // Monetary value
+  isActive        Boolean    @default(true)
+  stockQuantity   Int?       // For limited rewards
+  validFrom       DateTime?
+  validUntil      DateTime?
+  terms           String?
+  imageUrl        String?
+  redemptionUrl   String?    // External API endpoint
+  category        String?
+  minLevel        Int        @default(1)
+  maxRedemptions  Int?       // Per farmer limit
+  createdById     String
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  createdBy       AdminProfile @relation(fields: [createdById], references: [id])
+  farmerRewards   FarmerReward[]
+
+  @@map("rewards")
+}
+
+// Farmer reward redemptions
+model FarmerReward {
+  id            String   @id @default(cuid())
+  farmerId      String
+  rewardId      String
+  pointsSpent   Int
+  status        String   @default("PENDING") // PENDING, APPROVED, DELIVERED, EXPIRED
+  redemptionCode String? @unique
+  redeemedAt    DateTime @default(now())
+  deliveredAt   DateTime?
+  expiresAt     DateTime?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  farmer        Farmer   @relation(fields: [farmerId], references: [id])
+  reward        Reward   @relation(fields: [rewardId], references: [id])
+
+  @@map("farmer_rewards")
+}
+
+// Badge definitions
+model Badge {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  description   String
+  type          BadgeType
+  iconUrl       String
+  colorCode     String    @default("#10B981")
+  criteria      Json      // Achievement criteria
+  pointsReward  Int       @default(0)
+  isActive      Boolean   @default(true)
+  rarity        String    @default("COMMON") // COMMON, RARE, EPIC, LEGENDARY
+  category      String?
+  seasonalStart DateTime?
+  seasonalEnd   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  farmerBadges  FarmerBadge[]
+
+  @@map("badges")
+}
+
+// Farmer badge achievements
+model FarmerBadge {
+  id          String   @id @default(cuid())
+  farmerId    String
+  badgeId     String
+  earnedAt    DateTime @default(now())
+  criteria    Json?    // What specifically was achieved
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  farmer      Farmer   @relation(fields: [farmerId], references: [id])
+  badge       Badge    @relation(fields: [badgeId], references: [id])
+
+  @@unique([farmerId, badgeId])
+  @@map("farmer_badges")
+}
+
+// Leaderboards
+model Leaderboard {
+  id            String              @id @default(cuid())
+  name          String
+  type          String              // GLOBAL, PANCHAYAT, VILLAGE, REGION
+  scope         String?             // Specific region/panchayat name
+  season        Season?
+  startDate     DateTime
+  endDate       DateTime?
+  isActive      Boolean             @default(true)
+  refreshRate   String              @default("DAILY") // HOURLY, DAILY, WEEKLY
+  lastUpdated   DateTime            @default(now())
+  criteria      Json                @default("{}")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  // Relations
+  entries       LeaderboardEntry[]
+
+  @@map("leaderboards")
+}
+
+// Leaderboard entries
+model LeaderboardEntry {
+  id              String      @id @default(cuid())
+  leaderboardId   String
+  farmerId        String
+  rank            Int
+  score           Decimal     @db.Decimal(10,2)
+  points          Int         @default(0)
+  missionsCompleted Int       @default(0)
+  streak          Int         @default(0)
+  badges          Int         @default(0)
+  metadata        Json        @default("{}")
+  lastUpdated     DateTime    @default(now())
+
+  // Relations
+  leaderboard     Leaderboard @relation(fields: [leaderboardId], references: [id])
+  farmer          Farmer      @relation(fields: [farmerId], references: [id])
+
+  @@unique([leaderboardId, farmerId])
+  @@map("leaderboard_entries")
+}
+
+// Community posts
+model Post {
+  id              String        @id @default(cuid())
+  farmerId        String
+  authorId        String
+  title           String?
+  content         String
+  images          String[]      @default([])
+  tags            String[]      @default([])
+  category        String?       // Success Story, Tip, Question, etc.
+  isPublic        Boolean       @default(true)
+  status          PostStatus    @default(PUBLISHED)
+  likesCount      Int           @default(0)
+  commentsCount   Int           @default(0)
+  viewsCount      Int           @default(0)
+  isFeatured      Boolean       @default(false)
+  isPinned        Boolean       @default(false)
+  moderatedAt     DateTime?
+  moderatedBy     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  farmer          Farmer        @relation(fields: [farmerId], references: [id])
+  author          User          @relation(fields: [authorId], references: [id])
+  likes           PostLike[]
+  comments        PostComment[]
+  moderationActions ModerationAction[]
+
+  @@map("posts")
+}
+
+// Post likes
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("post_likes")
+}
+
+// Post comments
+model PostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("post_comments")
+}
+
+// Content moderation
+model ModerationAction {
+  id          String   @id @default(cuid())
+  postId      String
+  moderatorId String
+  action      String   // APPROVE, REJECT, FLAG, REMOVE
+  reason      String?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  post        Post     @relation(fields: [postId], references: [id])
+  moderator   User     @relation(fields: [moderatorId], references: [id])
+
+  @@map("moderation_actions")
+}
+
+// Notifications
+model Notification {
+  id          String   @id @default(cuid())
+  senderId    String?
+  receiverId  String
+  type        String   // MISSION_ASSIGNED, BADGE_EARNED, LEADERBOARD_UPDATE, etc.
+  title       String
+  message     String
+  data        Json?    // Additional payload
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+  actionUrl   String?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  sender      User?    @relation("NotificationSender", fields: [senderId], references: [id])
+  receiver    User     @relation("NotificationReceiver", fields: [receiverId], references: [id])
+
+  @@map("notifications")
+}
+
+// System settings
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  category    String   @default("general")
+  isPublic    Boolean  @default(false)
+  dataType    String   @default("string")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+// Analytics and tracking
+model Analytics {
+  id          String   @id @default(cuid())
+  eventType   String   // USER_LOGIN, MISSION_COMPLETE, POST_CREATE, etc.
+  entityId    String?  // ID of related entity
+  userId      String?
+  metadata    Json     @default("{}")
+  timestamp   DateTime @default(now())
+  sessionId   String?
+  ipAddress   String?
+  userAgent   String?
+
+  @@map("analytics")
+}
+
+// Offline sync queue
+model SyncQueue {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String   // CREATE, UPDATE, DELETE
+  entity      String   // POST, MISSION_PROGRESS, etc.
+  entityId    String?
+  data        Json
+  status      String   @default("PENDING") // PENDING, SYNCED, FAILED
+  attempts    Int      @default(0)
+  lastAttempt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@map("sync_queue")
+}
+
+// Farmer's crops
+model FarmerCrop {
+  id              String      @id @default(cuid())
+  farmerId        String
+  cropType        CropType
+  variety         String?
+  sowingDate      DateTime?
+  soilPH          Decimal?    @db.Decimal(3,2)
+  soilTexture     String?
+  soilFertility   String?     // LOW, MEDIUM, HIGH
+  farmSize        Decimal?    @db.Decimal(8,2) // in acres
+  location        String?     // GPS coordinates or manual entry
+  latitude        Decimal?    @db.Decimal(10,8)
+  longitude       Decimal?    @db.Decimal(11,8)
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  farmer          Farmer      @relation(fields: [farmerId], references: [id])
+  growthRecords   CropGrowthTracking[]
+  photos          Photo[]
+  aiAnalyses      AIAnalysis[]
+  creditReports   CropCreditReport[]
+
+  @@map("farmer_crops")
+}
+
+// Crop growth tracking
+model CropGrowthTracking {
+  id              String      @id @default(cuid())
+  farmerCropId    String
+  stage           GrowthStage
+  stageDate       DateTime    @default(now())
+  notes           String?
+  isVerified      Boolean     @default(false)
+  verifiedAt      DateTime?
+  verifiedBy      String?     // Admin/Mentor ID
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  farmerCrop      FarmerCrop  @relation(fields: [farmerCropId], references: [id])
+  photos          Photo[]
+
+  @@map("crop_growth_tracking")
+}
+
+// Farmer photos with metadata
+model Photo {
+  id              String      @id @default(cuid())
+  farmerCropId    String
+  growthTrackingId String?
+  url             String
+  caption         String?
+  latitude        Decimal?    @db.Decimal(10,8)
+  longitude       Decimal?    @db.Decimal(11,8)
+  timestamp       DateTime    @default(now())
+  stage           GrowthStage?
+  isPublic        Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  farmerCrop      FarmerCrop      @relation(fields: [farmerCropId], references: [id])
+  growthTracking  CropGrowthTracking? @relation(fields: [growthTrackingId], references: [id])
+  aiAnalyses      AIAnalysis[]
+
+  @@map("photos")
+}
+
+// AI analysis results
+model AIAnalysis {
+  id              String      @id @default(cuid())
+  farmerCropId    String
+  photoId         String?
+  healthScore     Decimal     @db.Decimal(5,2) // 0-100
+  leafColor       String?     // GREEN, YELLOW, BROWN, etc.
+  density         Decimal?    @db.Decimal(5,2) // 0-100
+  diseaseDetected Boolean     @default(false)
+  diseaseType     String?
+  growthPercent   Decimal?    @db.Decimal(5,2) // 0-100
+  canopyCover     Decimal?    @db.Decimal(5,2) // 0-100
+  recommendations Json?       // AI recommendations
+  analysisDate    DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  farmerCrop      FarmerCrop  @relation(fields: [farmerCropId], references: [id])
+  photo           Photo?      @relation(fields: [photoId], references: [id])
+
+  @@map("ai_analyses")
+}
+
+// Crop credit reports
+model CropCreditReport {
+  id              String      @id @default(cuid())
+  farmerCropId    String
+  farmerId        String
+  season          Season?
+  growthTimeline  Json        // Timeline of growth stages
+  totalPhotos     Int         @default(0)
+  aiAnalysisIds   String[]    // References to AI analyses
+  healthScore     Decimal     @db.Decimal(5,2) // 0-100
+  predictedYield  Json?       // Range and quality metrics
+  sustainabilityScore Decimal? @db.Decimal(5,2) // 0-100
+  recommendations Json?       // Final recommendations
+  isGenerated     Boolean     @default(false)
+  generatedAt     DateTime?
+  pdfUrl          String?     // URL to generated PDF
+  sharedWith      String[]    // List of entities it was shared with
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  farmerCrop      FarmerCrop  @relation(fields: [farmerCropId], references: [id])
+  farmer          Farmer      @relation(fields: [farmerId], references: [id])
+
+  @@map("crop_credit_reports")
+}
+
+// Help desk tickets
+model HelpDeskTicket {
+  id              String          @id @default(cuid())
+  farmerId        String
+  title           String
+  description     String
+  priority        TicketPriority  @default(MEDIUM)
+  status          TicketStatus    @default(OPEN)
+  assignedToId    String?         // Mentor/Admin ID
+  category        String?         // Technical, Farming Advice, etc.
+  resolvedAt      DateTime?
+  resolvedById    String?         // User who resolved
+  resolutionNotes String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  farmer          Farmer          @relation(fields: [farmerId], references: [id])
+  assignedTo      User?           @relation("HelpDeskAssignee", fields: [assignedToId], references: [id])
+  messages        HelpDeskMessage[]
+
+  @@map("help_desk_tickets")
+}
+
+// Help desk messages
+model HelpDeskMessage {
+  id              String      @id @default(cuid())
+  ticketId        String
+  senderId        String
+  content         String
+  isRead          Boolean     @default(false)
+  readAt          DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  ticket          HelpDeskTicket  @relation(fields: [ticketId], references: [id])
+  sender          User            @relation(fields: [senderId], references: [id])
+
+  @@map("help_desk_messages")
+}
+
+// Add the new models for Mission & Growth Section
+model FarmProfile {
+  id          String    @id @default(cuid())
+  userId      String
+  cropType    String
+  soilInfo    Json
+  seedVariety String
+  sowingDate  DateTime
+  size        Float
+  location    String
+  missionPlans MissionPlan[]
+  cropScores CropScore[]
+  auctionRequests AuctionRequest[]
+  user        User @relation(fields: [userId], references: [id], map: "farm_profile_user_fkey")
+  farmer      Farmer @relation(fields: [userId], references: [userId], map: "farm_profile_farmer_fkey")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("farm_profiles")
+}
+
+model MissionPlan {
+  id          String    @id @default(cuid())
+  farmId      String
+  cropType    String
+  missions    GrowthMission[]
+  farm        FarmProfile @relation(fields: [farmId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("mission_plans")
+}
+
+model GrowthMission {
+  id           String  @id @default(cuid())
+  missionPlanId String
+  title        String
+  description  String
+  stageOrder   Int
+  isCompleted  Boolean  @default(false)
+  photos       StagePhoto[]
+  analyses     MissionAnalysis[]
+  missionPlan  MissionPlan @relation(fields: [missionPlanId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("growth_missions")
+}
+
+model StagePhoto {
+  id        String   @id @default(cuid())
+  missionId String
+  url       String
+  geo       Json?
+  createdAt DateTime @default(now())
+  mission   GrowthMission  @relation(fields: [missionId], references: [id])
+  updatedAt DateTime @updatedAt
+
+  @@map("stage_photos")
+}
+
+model MissionAnalysis {
+  id         String   @id @default(cuid())
+  missionId  String
+  healthScore Float
+  notes      String?
+  createdAt  DateTime @default(now())
+  mission    GrowthMission @relation(fields: [missionId], references: [id])
+  updatedAt  DateTime @updatedAt
+
+  @@map("mission_analyses")
+}
+
+model CropScore {
+  id        Int      @id @default(autoincrement())
+  farmId    String
+  score     Float
+  reportUrl String
+  createdAt DateTime @default(now())
+  farm      FarmProfile @relation(fields: [farmId], references: [id])
+  auctionRequests AuctionRequest[]
+}
+
+model AuctionRequest {
+  id          Int      @id @default(autoincrement())
+  farmId      String
+  cropScoreId Int
+  status      String   @default("PENDING")
+  govtNotes   String?
+  createdAt   DateTime @default(now())
+  farm        FarmProfile @relation(fields: [farmId], references: [id])
+  cropScore   CropScore @relation(fields: [cropScoreId], references: [id])
+}
