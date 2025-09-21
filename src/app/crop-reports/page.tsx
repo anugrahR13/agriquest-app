@@ -13,9 +13,10 @@ import {
   TrendingUp,
   Eye,
   ArrowLeft,
-  Target,
-  Sprout
+  Target as TargetIcon,
+  Sprout as SproutIcon
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { 
   LineChart, 
@@ -426,9 +427,11 @@ export default function CropReportsPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {selectedReport.photos.map((photo) => (
                   <div key={photo.id} className="aspect-square rounded-lg overflow-hidden">
-                    <img 
+                    <Image 
                       src={photo.url} 
                       alt={photo.caption} 
+                      width={200}
+                      height={200}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
                     />
                     <p className="text-xs text-center mt-1 text-slate-600">{photo.stage}</p>
@@ -464,11 +467,11 @@ export default function CropReportsPage() {
             <span className="text-xs">Home</span>
           </Link>
           <Link href="/missions" className="flex flex-col items-center py-2 text-slate-400 touch-target">
-            <Target className="w-6 h-6" />
+            <TargetIcon className="w-6 h-6" />
             <span className="text-xs">Missions</span>
           </Link>
           <Link href="/crop-tracking" className="flex flex-col items-center py-2 text-slate-400 touch-target">
-            <Sprout className="w-6 h-6" />
+            <SproutIcon className="w-6 h-6" />
             <span className="text-xs">Crops</span>
           </Link>
           <Link href="/crop-reports" className="flex flex-col items-center py-2 text-green-600 touch-target">

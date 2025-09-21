@@ -55,7 +55,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
@@ -69,7 +68,7 @@ export default function DashboardPage() {
 
     // Fetch user stats
     fetchUserStats(token);
-  }, []);
+  }, [router]);
 
   const fetchUserStats = async (token: string) => {
     try {

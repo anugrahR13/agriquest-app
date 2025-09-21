@@ -34,42 +34,49 @@ let mockFarmerMissions: any[] = [
 ];
 
 // Update mission progress
-export async function PUT(request: NextRequest, { params }: { params: { missionId: string } }) {
-  const { missionId } = params;
-  const body = await request.json();
-  const { progress, evidence } = body;
+export async function PUT(request: NextRequest, context: { params: Promise<{ missionId: string }> }) {
+  try {
+    // Resolve the params promise
+    const resolvedParams = await context.params;
+    const { missionId } = resolvedParams;
+    const body = await request.json();
+    const { progress, evidence } = body;
 
-  // Authenticate user
-  const authResult = await authenticateToken(request);
-  
-  if (authResult.error) {
-    return NextResponse.json({ error: authResult.error.message }, { status: authResult.error.status });
+    // Authenticate user
+    const authResult = await authenticateToken(request);
+    
+    if (authResult.error) {
+      return NextResponse.json({ error: authResult.error.message }, { status: authResult.error.status });
+    }
+
+    const user = authResult.user;
+    
+    // For demo, we'll use a fixed farmer ID
+    const farmerId = 'farmer_demo_12345';
+    
+    // Find farmer mission
+    const farmerMission = mockFarmerMissions.find(fm => 
+      fm.farmerId === farmerId && fm.missionId === missionId
+    );
+
+    if (!farmerMission) {
+      return NextResponse.json({ error: 'Mission not started' }, { status: 404 });
+    }
+
+    // Prepare evidence data
+    let evidenceSubmitted: any[] = farmerMission.evidenceSubmitted;
+    if (evidence) {
+      evidenceSubmitted = [...evidenceSubmitted, evidence];
+    }
+
+    // Update progress
+    farmerMission.progress = progress || farmerMission.progress;
+    farmerMission.evidenceSubmitted = evidenceSubmitted;
+    farmerMission.updatedAt = new Date();
+
+    return NextResponse.json({ progress: farmerMission.progress });
+  } catch (error) {
+    console.error('Error updating mission progress:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  const user = authResult.user;
-  
-  // For demo, we'll use a fixed farmer ID
-  const farmerId = 'farmer_demo_12345';
-  
-  // Find farmer mission
-  const farmerMission = mockFarmerMissions.find(fm => 
-    fm.farmerId === farmerId && fm.missionId === missionId
-  );
-
-  if (!farmerMission) {
-    return NextResponse.json({ error: 'Mission not started' }, { status: 404 });
-  }
-
-  // Prepare evidence data
-  let evidenceSubmitted: any[] = farmerMission.evidenceSubmitted;
-  if (evidence) {
-    evidenceSubmitted = [...evidenceSubmitted, evidence];
-  }
-
-  // Update progress
-  farmerMission.progress = progress || farmerMission.progress;
-  farmerMission.evidenceSubmitted = evidenceSubmitted;
-  farmerMission.updatedAt = new Date();
-
-  return NextResponse.json({ mission: farmerMission });
 }

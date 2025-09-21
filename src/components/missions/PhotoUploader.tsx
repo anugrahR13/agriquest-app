@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import { Camera, Upload, X, MapPin } from 'lucide-react';
 
 interface PhotoUploaderProps {
@@ -101,9 +102,11 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         <div className="grid grid-cols-2 gap-2 mb-4">
           {previews.map((preview, index) => (
             <div key={index} className="relative">
-              <img 
+              <Image 
                 src={preview} 
                 alt={`Preview ${index + 1}`} 
+                width={200}
+                height={128}
                 className="w-full h-32 object-cover rounded-lg"
               />
               <button

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { 
@@ -37,18 +38,15 @@ interface AuctionDetail {
   governmentNotes: string | null;
 }
 
-export default function AuctionDetailsPage({ params }: { params: { id: string } }) {
+export default function AuctionDetailsPage() {
+  const params = useParams();
   const { t } = useTranslation();
-  const [auction, setAuction] = useState<AuctionDetail | null>(null);
+  const [auction, setAuction] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bidAmount, setBidAmount] = useState('');
 
-  useEffect(() => {
-    fetchAuctionDetails();
-  }, [params.id]);
-
-  const fetchAuctionDetails = async () => {
+  const fetchAuctionDetails = useCallback(async () => {
     try {
       setLoading(true);
       // For demo purposes, we'll simulate fetching auction details
@@ -57,7 +55,7 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
       // Mock data for demonstration
       setTimeout(() => {
         setAuction({
-          id: parseInt(params.id),
+          id: parseInt(params.id as string),
           cropType: 'WHEAT',
           variety: 'HD 2967',
           quantity: 5.5,
@@ -79,7 +77,11 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
       console.error('Error fetching auction details:', err);
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchAuctionDetails();
+  }, [fetchAuctionDetails]);
 
   const handlePlaceBid = (e: React.FormEvent) => {
     e.preventDefault();

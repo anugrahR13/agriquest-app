@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import ScoreCard from '@/components/ai/ScoreCard';
@@ -25,22 +25,21 @@ interface ReportData {
   // ... other fields
 }
 
-export default function ScorePage({ params }: { params: { farmId: string } }) {
+export default function ScorePage({ params }: { params: Promise<{ farmId: string }> }) {
   const { t } = useTranslation();
   const router = useRouter();
   const [cropScore, setCropScore] = useState<CropScore | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ farmId: string } | null>(null);
 
-  useEffect(() => {
-    fetchCropScore();
-  }, [params.farmId]);
-
-  const fetchCropScore = async () => {
+  const fetchCropScore = useCallback(async () => {
+    if (!resolvedParams) return;
+    
     try {
       setLoading(true);
-      const response = await fetch(`/api/crop-score/${params.farmId}`);
+      const response = await fetch(`/api/crop-score/${resolvedParams.farmId}`);
       const data = await response.json();
       
       if (response.ok) {
@@ -64,7 +63,23 @@ export default function ScorePage({ params }: { params: { farmId: string } }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolvedParams]);
+
+  useEffect(() => {
+    const resolveParams = async () => {
+      const resolved = await params;
+      setResolvedParams(resolved);
+      // Trigger fetchCropScore after params are resolved
+    };
+    
+    resolveParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (resolvedParams) {
+      fetchCropScore();
+    }
+  }, [resolvedParams, fetchCropScore]);
 
   const generateMockRecommendations = (score: number): string[] => {
     if (score < 3) {

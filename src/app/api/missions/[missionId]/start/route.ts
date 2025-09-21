@@ -74,8 +74,10 @@ const mockMissions = [
 ];
 
 // Start a mission
-export async function POST(request: NextRequest, { params }: { params: { missionId: string } }) {
-  const { missionId } = params;
+export async function POST(request: NextRequest, { params }: { params: Promise<{ missionId: string }> }) {
+  // Resolve the params promise
+  const resolvedParams = await params;
+  const { missionId } = resolvedParams;
   
   // Authenticate user
   const authResult = await authenticateToken(request);
