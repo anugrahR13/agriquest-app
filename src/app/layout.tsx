@@ -1,29 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import I18nProvider from '../components/I18nProvider';
+import './globals.css';
+import { Inter } from 'next/font/google';
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: "AgriQuest - Sustainable Farming",
-  description: "Gamified platform for sustainable farming practices. Earn points, badges, and rewards by adopting eco-friendly farming methods.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "AgriQuest",
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  icons: {
-    icon: "/icons/icon-192x192.png",
-    apple: "/icons/icon-192x192.png",
-  },
+  title: 'AgriQuest - Farming Intelligence Platform',
+  description: 'AI-powered farming solutions for modern agriculture',
 };
 
 export const viewport: Viewport = {
@@ -34,20 +17,13 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
-  params,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-  params?: Promise<{
-    lang: string;
-  }>;
-}) {
-  // Resolve the params promise if it exists
-  const resolvedParams = params ? await params : undefined;
-  
+}>) {
   return (
-    <html lang={resolvedParams?.lang || "en"} className={inter.variable}>
+    <html lang="en" className={inter.variable}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -56,11 +32,9 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className="font-inter bg-slate-50 text-slate-900 min-h-screen agri-bg">
-        <I18nProvider>
-          <div id="root" className="min-h-screen">
-            {children}
-          </div>
-        </I18nProvider>
+        <div id="root" className="min-h-screen">
+          {children}
+        </div>
       </body>
     </html>
   );

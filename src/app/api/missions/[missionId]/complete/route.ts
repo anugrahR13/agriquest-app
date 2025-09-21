@@ -7,18 +7,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const resolvedParams = await params;
     const { missionId } = resolvedParams;
 
-    // Get the mission with its associated farm
-    const mission = await prisma.mission.findUnique({
-      where: { id: missionId },
-      include: { farm: true }
+    // Get the farmer mission
+    const farmerMission = await prisma.farmerMission.findUnique({
+      where: { id: missionId }
     });
 
-    if (!mission) {
+    if (!farmerMission) {
       return NextResponse.json({ error: 'Mission not found' }, { status: 404 });
     }
 
-    // Update mission status to completed
-    const updatedMission = await prisma.mission.update({
+    // Update farmer mission status to completed
+    const updatedFarmerMission = await prisma.farmerMission.update({
       where: { id: missionId },
       data: { 
         status: 'COMPLETED',
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
     });
 
-    return NextResponse.json(updatedMission);
+    return NextResponse.json(updatedFarmerMission);
   } catch (error) {
     console.error('Error completing mission:', error);
     return NextResponse.json({ error: 'Failed to complete mission' }, { status: 500 });

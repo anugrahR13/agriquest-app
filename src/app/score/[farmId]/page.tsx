@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import ScoreCard from '@/components/ai/ScoreCard';
 import Suggestions from '@/components/ai/Suggestions';
-import { Download, AlertCircle, CheckCircle } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle, Calendar, MapPin, Wheat, Award } from 'lucide-react';
 
 interface CropScore {
   id: number;
@@ -22,9 +22,9 @@ interface ReportData {
   sowingDate: string;
   healthScore: number;
   recommendations: string[];
-  // ... other fields
 }
 
+// Fix the params type to match Next.js expectations
 export default function ScorePage({ params }: { params: Promise<{ farmId: string }> }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -32,14 +32,17 @@ export default function ScorePage({ params }: { params: Promise<{ farmId: string
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [resolvedParams, setResolvedParams] = useState<{ farmId: string } | null>(null);
+
+  // Resolve the params promise
+  const resolvedParams = params instanceof Promise ? params : Promise.resolve(params);
 
   const fetchCropScore = useCallback(async () => {
-    if (!resolvedParams) return;
+    const { farmId } = await resolvedParams;
+    if (!farmId) return;
     
     try {
       setLoading(true);
-      const response = await fetch(`/api/crop-score/${resolvedParams.farmId}`);
+      const response = await fetch(`/api/crop-score/${farmId}`);
       const data = await response.json();
       
       if (response.ok) {
@@ -66,20 +69,8 @@ export default function ScorePage({ params }: { params: Promise<{ farmId: string
   }, [resolvedParams]);
 
   useEffect(() => {
-    const resolveParams = async () => {
-      const resolved = await params;
-      setResolvedParams(resolved);
-      // Trigger fetchCropScore after params are resolved
-    };
-    
-    resolveParams();
-  }, [params]);
-
-  useEffect(() => {
-    if (resolvedParams) {
-      fetchCropScore();
-    }
-  }, [resolvedParams, fetchCropScore]);
+    fetchCropScore();
+  }, [fetchCropScore]);
 
   const generateMockRecommendations = (score: number): string[] => {
     if (score < 3) {
@@ -195,31 +186,63 @@ export default function ScorePage({ params }: { params: Promise<{ farmId: string
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-500">{t('sowing_date')}</p>
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {t('sowing_date')}
+                </p>
                 <p className="font-medium">{reportData?.sowingDate}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{t('generated_on')}</p>
-                <p className="font-medium">{new Date(cropScore.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {t('location')}
+                </p>
+                <p className="font-medium">{reportData?.farmLocation}</p>
               </div>
+              <div>
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <Wheat className="h-4 w-4" />
+                  {t('crop_type')}
+                </p>
+                <p className="font-medium">{reportData?.cropType}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <Award className="h-4 w-4" />
+                  {t('health_score')}
+                </p>
+                <p className="font-medium">{reportData?.healthScore}/100</p>
+              </div>
+            </div>
+            
+            <div className="pt-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">{t('recommendations')}</h3>
+              <ul className="list-disc list-inside space-y-1">
+                {reportData?.recommendations.map((rec, index) => (
+                  <li key={index} className="text-gray-700">{rec}</li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
       </div>
-
-      {reportData && (
-        <Suggestions recommendations={reportData.recommendations} />
-      )}
-
+      
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">{t('apply_for_government_auction')}</h2>
-        <p className="mb-4 text-gray-700">{t('auction_description')}</p>
-        <button 
-          onClick={handleApplyForAuction}
-          className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          {t('apply_for_auction')}
-        </button>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">{t('next_steps')}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button 
+            onClick={handleApplyForAuction}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded text-center transition duration-300"
+          >
+            {t('apply_for_auction')}
+          </button>
+          <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded text-center transition duration-300">
+            {t('view_detailed_report')}
+          </button>
+          <button className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded text-center transition duration-300">
+            {t('share_results')}
+          </button>
+        </div>
       </div>
     </div>
   );
