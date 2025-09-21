@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import I18nProvider from '../components/I18nProvider';
-import { languages } from '../i18n/config';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,30 +34,17 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-// Define the language types for the RootLayout props
-type RootLayoutProps = {
-  children: React.ReactNode;
-  params?: Promise<{
-    lang: string;
-  }> | {
-    lang: string;
-  };
-};
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
   params,
-}: RootLayoutProps) {
-  // Handle both Promise and resolved params
-  let resolvedParams;
-  if (params instanceof Promise) {
-    resolvedParams = await params;
-  } else {
-    resolvedParams = params;
-  }
-  
+}: {
+  children: React.ReactNode;
+  params?: {
+    lang: string;
+  };
+}) {
   return (
-    <html lang={resolvedParams?.lang || "en"} className={inter.variable}>
+    <html lang={params?.lang || "en"} className={inter.variable}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
