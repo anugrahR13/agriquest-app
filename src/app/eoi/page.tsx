@@ -318,7 +318,7 @@ export default function EOILandingPage() {
                 Thank You!
               </h3>
               <p className="text-gray-600 mb-6">
-                We've received your expression of interest. Our team will contact you soon with more information about AgriQuest.
+                We&apos;ve received your expression of interest. Our team will contact you soon with more information about AgriQuest.
               </p>
               <button 
                 onClick={() => {

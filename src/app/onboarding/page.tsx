@@ -171,7 +171,7 @@ export default function OnboardingPage() {
               <div className="text-center mb-6">
                 <User className="w-12 h-12 text-green-600 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-slate-800 mb-2">Personal Information</h2>
-                <p className="text-slate-600">Let's get to know you better</p>
+                <p className="text-slate-600">Let&apos;s get to know you better</p>
               </div>
 
               <div className="space-y-4">
@@ -408,7 +408,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
-                  <h3 className="font-semibold text-green-800 mb-2">🎉 You're all set!</h3>
+                  <h3 className="font-semibold text-green-800 mb-2">🎉 You&apos;re all set!</h3>
                   <p className="text-green-700 text-sm">
                     Complete your profile to start earning points through sustainable farming missions.
                   </p>

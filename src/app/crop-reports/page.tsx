@@ -12,7 +12,9 @@ import {
   MapPin,
   TrendingUp,
   Eye,
-  ArrowLeft
+  ArrowLeft,
+  Target,
+  Sprout
 } from 'lucide-react';
 import Link from 'next/link';
 import { 
@@ -378,7 +380,7 @@ export default function CropReportsPage() {
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name}: ${(percent as number * 100).toFixed(0)}%`}
                     >
                       {sustainabilityData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

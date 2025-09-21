@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 // Get auction status for a specific farm
 export async function GET(
   request: NextRequest,
-  { params }: { params: { farmId: string } }
+  { params }: { params: Promise<{ farmId: string }> }
 ) {
   try {
     // Authenticate user
@@ -17,10 +17,11 @@ export async function GET(
       return NextResponse.json({ error: authResult.error.message }, { status: authResult.error.status });
     }
 
-    const { farmId } = params;
+    // Resolve the params promise
+    const resolvedParams = await params;
+    const { farmId } = resolvedParams;
     
     // Find the latest auction request for this farm
-    // @ts-ignore - Prisma client typing issue
     const auctionRequest = await prisma.auctionRequest.findFirst({
       where: {
         farmId: farmId
