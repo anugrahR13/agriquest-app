@@ -34,17 +34,20 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params?: {
+  params?: Promise<{
     lang: string;
-  };
+  }>;
 }) {
+  // Resolve the params promise if it exists
+  const resolvedParams = params ? await params : undefined;
+  
   return (
-    <html lang={params?.lang || "en"} className={inter.variable}>
+    <html lang={resolvedParams?.lang || "en"} className={inter.variable}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
