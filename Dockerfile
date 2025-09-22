@@ -11,8 +11,8 @@ RUN apk add --no-cache python3 make g++ curl
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including devDependencies needed for build)
+RUN npm ci
 
 # Generate Prisma client
 RUN npx prisma generate
@@ -22,6 +22,9 @@ COPY . .
 
 # Build the application
 RUN npm run build
+
+# Remove devDependencies to reduce image size
+RUN npm prune --production
 
 # Make startup script executable
 COPY docker-start.sh .
