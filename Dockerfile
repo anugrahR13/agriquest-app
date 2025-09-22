@@ -26,8 +26,9 @@ RUN npm run build
 # Remove devDependencies to reduce image size
 RUN npm prune --production
 
-# Make startup script executable
-RUN chmod +x ./docker-start.sh
+# Fix line endings and make startup script executable
+RUN sed -i 's/\r$//' ./docker-start.sh && \
+    chmod +x ./docker-start.sh
 
 # Expose port
 EXPOSE 3000

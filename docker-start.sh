@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Wait for database to be ready
 echo "Starting AgriQuest application..."
@@ -24,4 +24,4 @@ echo "Database migrations completed successfully"
 
 # Start the application
 echo "Starting Next.js application..."
-npm start
+exec npm start
