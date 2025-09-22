@@ -12,8 +12,9 @@ import {
   Calendar,
   ArrowLeft,
   Leaf,
-  Target,
-  Users
+  Users,
+  Plus,
+  CheckCircle
 } from 'lucide-react';
 
 interface AuctionListing {
@@ -28,6 +29,7 @@ interface AuctionListing {
   farmerName: string;
   farmLocation: string;
   status: string;
+  cropScore: number;
 }
 
 export default function AuctionListingsPage() {
@@ -44,15 +46,15 @@ export default function AuctionListingsPage() {
     try {
       setLoading(true);
       const response = await fetch('/api/auction/listings');
-      const data = await response.json();
       
-      if (response.ok) {
-        setAuctions(data.auctions);
-      } else {
-        setError(data.error || 'Failed to fetch auction listings');
+      if (!response.ok) {
+        throw new Error('Failed to fetch auction listings');
       }
+      
+      const data = await response.json();
+      setAuctions(data.auctions);
     } catch (err) {
-      setError('Failed to fetch auction listings');
+      setError('Failed to fetch auction listings: ' + (err as Error).message);
       console.error('Error fetching auction listings:', err);
     } finally {
       setLoading(false);
@@ -61,11 +63,11 @@ export default function AuctionListingsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'APPROVED':
+      case 'ACTIVE':
         return 'bg-green-100 text-green-800';
       case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
-      case 'REJECTED':
+      case 'ENDED':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -82,13 +84,17 @@ export default function AuctionListingsPage() {
     const diff = end.getTime() - now.getTime();
     
     if (diff <= 0) {
-      return t('auction_ended');
+      return 'Ended';
     }
     
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     
-    return `${days}d ${hours}h`;
+    if (days > 0) {
+      return `${days}d ${hours}h`;
+    } else {
+      return `${hours}h`;
+    }
   };
 
   if (loading) {
@@ -103,7 +109,7 @@ export default function AuctionListingsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4">
         <div className="max-w-md mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">{t('error')}: </strong>
+          <strong className="font-bold">Error: </strong>
           <span className="block sm:inline">{error}</span>
         </div>
       </div>
@@ -132,10 +138,20 @@ export default function AuctionListingsPage() {
         <div className="max-w-md mx-auto space-y-6">
           {/* Stats Card */}
           <div className="glass-card rounded-xl p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-800 mb-4">{t('active_auctions')}</h2>
-            <p className="text-slate-600 mb-4">
-              {t('browse_government_auctions')}
-            </p>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">{t('active_auctions')}</h2>
+                <p className="text-slate-600">
+                  {t('browse_government_auctions')}
+                </p>
+              </div>
+              <Link 
+                href="/auction/apply"
+                className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full"
+              >
+                <Plus className="w-6 h-6" />
+              </Link>
+            </div>
             
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="bg-green-50 p-3 rounded-lg text-center">
@@ -185,7 +201,7 @@ export default function AuctionListingsPage() {
                       <div className="flex items-center space-x-2">
                         <IndianRupee className="w-4 h-4 text-green-600" />
                         <span className="text-sm">
-                          <span className="font-medium">{auction.currentBid}</span> bid
+                          <span className="font-medium">₹{auction.currentBid.toLocaleString()}</span> bid
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -204,12 +220,14 @@ export default function AuctionListingsPage() {
                       <div className="text-sm text-slate-600">
                         Ends: {formatDate(auction.endDate)}
                       </div>
-                      <Link 
-                        href={`/auction/details/${auction.id}`}
-                        className="text-green-600 font-medium text-sm touch-target"
-                      >
-                        {t('view_details')}
-                      </Link>
+                      <div className="flex space-x-2">
+                        <Link 
+                          href={`/auction/details/${auction.id}`}
+                          className="text-green-600 font-medium text-sm touch-target"
+                        >
+                          {t('view_details')}
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -227,6 +245,38 @@ export default function AuctionListingsPage() {
               </div>
             )}
           </div>
+          
+          {/* Info Section */}
+          <div className="glass-card rounded-xl p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">How Government Auctions Work</h3>
+            
+            <div className="space-y-4 text-sm text-slate-600">
+              <p>
+                Government auctions provide farmers with a transparent platform to sell their crops at fair market prices. 
+                Our system ensures that both farmers and buyers get the best value through competitive bidding.
+              </p>
+              
+              <div className="bg-green-50 p-3 rounded-lg">
+                <h4 className="font-medium text-slate-800 mb-1">Benefits for Farmers</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Guaranteed fair market price for your crops</li>
+                  <li>Transparent bidding process</li>
+                  <li>Government-backed transactions</li>
+                  <li>AI-powered crop quality assessment</li>
+                </ul>
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <h4 className="font-medium text-slate-800 mb-1">Benefits for Buyers</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Access to high-quality crops</li>
+                  <li>Competitive pricing</li>
+                  <li>Verified farmer credentials</li>
+                  <li>Detailed crop reports and analytics</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -238,7 +288,7 @@ export default function AuctionListingsPage() {
             <span className="text-xs">Home</span>
           </Link>
           <Link href="/missions" className="flex flex-col items-center py-2 text-slate-400 touch-target">
-            <Target className="w-6 h-6" />
+            <CheckCircle className="w-6 h-6" />
             <span className="text-xs">Missions</span>
           </Link>
           <Link href="/auction/listings" className="flex flex-col items-center py-2 text-green-600 touch-target">

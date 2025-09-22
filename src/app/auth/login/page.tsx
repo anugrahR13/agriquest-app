@@ -7,7 +7,8 @@ import {
   Phone as FaPhone, 
   Lock as FaLock, 
   ArrowRight as FaArrowRight, 
-  Tractor as FaTractor
+  Tractor as FaTractor,
+  FileText as FaFileText
 } from 'lucide-react';
 import { Phone, ArrowRight, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -152,7 +153,16 @@ export default function LoginPage() {
           <FaTractor className="text-green-600 mr-2 text-2xl" />
           <h1 className="text-xl font-bold text-green-800">AgriQuest</h1>
         </div>
-        <LanguageSwitcher />
+        <div className="flex items-center space-x-3">
+          <Link 
+            href="/eoi" 
+            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center"
+          >
+            <FaFileText className="w-4 h-4 mr-1" />
+            Express Interest
+          </Link>
+          <LanguageSwitcher />
+        </div>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center w-full px-4 py-8 z-10">

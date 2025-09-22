@@ -1,8 +1,14 @@
-'use client';
-
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import Image from 'next/image';
+
+interface Crop {
+  id: string;
+  cropType: string;
+  variety: string;
+  sowingDate: string;
+  growthRecords: GrowthRecord[];
+  photos: Photo[];
+}
 
 interface GrowthRecord {
   id: string;
@@ -18,22 +24,17 @@ interface Photo {
   timestamp: string;
 }
 
-interface FarmerCrop {
-  id: string;
-  cropType: string;
-  variety: string;
-  sowingDate: string;
-  growthRecords: GrowthRecord[];
-  photos: Photo[];
-}
-
 const CropTracking: React.FC = () => {
   const { t } = useTranslation();
-  const [crops, setCrops] = useState<FarmerCrop[]>([]);
+  const [crops, setCrops] = useState<Crop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCrops = useCallback(async () => {
+  useEffect(() => {
+    fetchCrops();
+  }, []);
+
+  const fetchCrops = async () => {
     try {
       setLoading(true);
       // In a real app, this would be an API call
@@ -77,11 +78,7 @@ const CropTracking: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [t]);
-
-  useEffect(() => {
-    fetchCrops();
-  }, [fetchCrops]);
+  };
 
   if (loading) {
     return (
@@ -151,11 +148,9 @@ const CropTracking: React.FC = () => {
                   <div className="grid grid-cols-3 gap-2">
                     {crop.photos.map((photo) => (
                       <div key={photo.id} className="aspect-square overflow-hidden rounded">
-                        <Image 
+                        <img 
                           src={photo.url} 
                           alt={photo.caption} 
-                          width={200}
-                          height={200}
                           className="w-full h-full object-cover"
                         />
                       </div>

@@ -34,14 +34,13 @@ export default function AuctionStatusPage() {
   useEffect(() => {
     // In a real implementation, we would get the farmId from the user context or route params
     // For demo purposes, we'll use a mock farmId
-    const mockFarmId = 'farm_123';
-    fetchAuctionStatus(mockFarmId);
+    fetchAuctionStatus();
   }, []);
 
-  const fetchAuctionStatus = async (farmId: string) => {
+  const fetchAuctionStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/auction/${farmId}`);
+      const response = await fetch(`/api/auction`);
       const data = await response.json();
       
       if (response.ok) {

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     // Authenticate user
     const authResult = await authenticateToken(request);
     
-    if (authResult.error) {
+    if ('error' in authResult && authResult.error) {
       return NextResponse.json({ error: authResult.error.message }, { status: authResult.error.status });
     }
 
@@ -18,14 +18,14 @@ export async function GET(request: NextRequest) {
     
     // Get all active auctions (approved and open for bidding)
     // @ts-ignore - Prisma client typing issue
-    const auctions = await prisma.auctionRequest.findMany({
+    const auctions = await prisma.auction.findMany({
       where: {
-        status: 'APPROVED',
-        // Add date filtering for active auctions
-        // Assuming we have startDate and endDate fields in a future enhancement
+        status: 'ACTIVE',
+        endDate: {
+          gte: new Date()
+        }
       },
       include: {
-        cropScore: true,
         farm: {
           include: {
             farmer: {
@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
               }
             }
           }
-        }
+        },
+        cropScoreRecord: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -44,15 +45,15 @@ export async function GET(request: NextRequest) {
     // Transform the data for the frontend
     const auctionListings = auctions.map((auction: any) => ({
       id: auction.id,
-      cropType: auction.farm.cropType,
-      variety: auction.farm.seedVariety,
-      quantity: auction.farm.size, // Using farm size as quantity for demo
-      startingPrice: Math.floor(auction.cropScore.score * 100), // Mock pricing based on crop score
-      currentBid: Math.floor(auction.cropScore.score * 110), // Mock current bid
-      startDate: new Date(auction.createdAt).toISOString(),
-      endDate: new Date(new Date(auction.createdAt).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from creation
-      farmerName: `${auction.farm.farmer.user.firstName} ${auction.farm.farmer.user.lastName}`,
-      farmLocation: auction.farm.location,
+      cropType: auction.cropType,
+      variety: auction.variety || auction.farm.seedVariety,
+      quantity: auction.quantity,
+      startingPrice: auction.startingPrice,
+      currentBid: auction.currentBid,
+      startDate: auction.startDate.toISOString(),
+      endDate: auction.endDate.toISOString(),
+      farmerName: auction.farmerName || `${auction.farm.farmer.user.firstName} ${auction.farm.farmer.user.lastName}`,
+      farmLocation: auction.farmLocation || auction.farm.location,
       status: auction.status
     }));
     

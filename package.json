@@ -15,11 +15,7 @@
     "db:studio": "prisma studio",
     "initialize-crop-badges": "tsx scripts/initialize-crop-badges.ts",
     "init-demo": "tsx scripts/init-demo.ts",
-    "verify-setup": "tsx scripts/verify-setup.ts",
-    "deploy": "docker-compose -f docker-compose.prod.yml up -d",
-    "deploy:build": "docker-compose -f docker-compose.prod.yml up -d --build",
-    "deploy:down": "docker-compose -f docker-compose.prod.yml down",
-    "prepare": "husky install"
+    "verify-setup": "tsx scripts/verify-setup.ts"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.3",
@@ -57,7 +53,6 @@
     "yup": "^1.7.0"
   },
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.4",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^30.0.0",
@@ -67,9 +62,6 @@
     "@types/react": "19.1.13",
     "@types/supertest": "^6.0.2",
     "autoprefixer": "^10.4.21",
-    "eslint": "^8.56.0",
-    "eslint-config-next": "^15.5.3",
-    "husky": "^9.1.7",
     "jest": "^30.1.3",
     "postcss": "^8.5.6",
     "supertest": "^7.1.4",

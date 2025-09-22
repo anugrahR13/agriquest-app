@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { 
@@ -17,8 +16,9 @@ import {
   FileText,
   CheckCircle,
   AlertCircle,
-  Target,
-  Users
+  Users,
+  Trophy,
+  History
 } from 'lucide-react';
 
 interface AuctionDetail {
@@ -38,65 +38,86 @@ interface AuctionDetail {
   governmentNotes: string | null;
 }
 
-export default function AuctionDetailsPage() {
-  const params = useParams();
+interface Bid {
+  id: number;
+  bidderName: string;
+  amount: number;
+  timestamp: string;
+  isWinner: boolean;
+}
+
+export default function AuctionDetailsPage({ params }: { params: { id: string } }) {
   const { t } = useTranslation();
-  const [auction, setAuction] = useState<any>(null);
+  const [auction, setAuction] = useState<AuctionDetail | null>(null);
+  const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bidAmount, setBidAmount] = useState('');
 
-  const fetchAuctionDetails = useCallback(async () => {
+  useEffect(() => {
+    fetchAuctionDetails();
+  }, [params.id]);
+
+  const fetchAuctionDetails = async () => {
     try {
       setLoading(true);
-      // For demo purposes, we'll simulate fetching auction details
-      // In a real implementation, this would be an API call to /api/auction/details/[id]
+      const response = await fetch(`/api/auction/${params.id}`);
       
-      // Mock data for demonstration
-      setTimeout(() => {
-        setAuction({
-          id: parseInt(params.id as string),
-          cropType: 'WHEAT',
-          variety: 'HD 2967',
-          quantity: 5.5,
-          startingPrice: 2000,
-          currentBid: 2200,
-          startDate: new Date().toISOString(),
-          endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-          farmerName: 'Ramesh Kumar',
-          farmLocation: 'Ghazipur, Uttar Pradesh',
-          status: 'APPROVED',
-          cropScore: 8.5,
-          reportUrl: '/sample-report.pdf',
-          governmentNotes: 'High quality produce with excellent health score. Recommended for premium markets.'
-        });
-        setLoading(false);
-      }, 1000);
+      if (!response.ok) {
+        throw new Error('Failed to fetch auction details');
+      }
+      
+      const data = await response.json();
+      setAuction(data.auction);
+      setBids(data.auction.bids || []);
+      setLoading(false);
     } catch (err) {
-      setError('Failed to fetch auction details');
+      setError('Failed to fetch auction details: ' + (err as Error).message);
       console.error('Error fetching auction details:', err);
       setLoading(false);
     }
-  }, [params.id]);
+  };
 
-  useEffect(() => {
-    fetchAuctionDetails();
-  }, [fetchAuctionDetails]);
-
-  const handlePlaceBid = (e: React.FormEvent) => {
+  const handlePlaceBid = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real implementation, this would submit the bid to the server
-    alert(`Bid of ₹${bidAmount} placed successfully!`);
-    setBidAmount('');
+    
+    if (!bidAmount || parseFloat(bidAmount) <= 0) {
+      alert('Please enter a valid bid amount');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/auction/${params.id}/bid`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount: parseFloat(bidAmount) }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`Bid of ₹${bidAmount} placed successfully!`);
+        setBidAmount('');
+        // Refresh auction details to show updated bid
+        fetchAuctionDetails();
+      } else {
+        alert(`Error: ${data.error || 'Failed to place bid'}`);
+      }
+    } catch (error) {
+      console.error('Error placing bid:', error);
+      alert('Failed to place bid. Please try again.');
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'APPROVED':
+      case 'ACTIVE':
         return 'bg-green-100 text-green-800';
       case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
-      case 'REJECTED':
+      case 'ENDED':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -107,19 +128,30 @@ export default function AuctionDetailsPage() {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString();
+  };
+
   const getTimeRemaining = (endDate: string) => {
     const end = new Date(endDate);
     const now = new Date();
     const diff = end.getTime() - now.getTime();
     
     if (diff <= 0) {
-      return t('auction_ended');
+      return 'Auction Ended';
     }
     
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     
-    return `${days}d ${hours}h`;
+    if (days > 0) {
+      return `${days}d ${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    } else {
+      return `${minutes}m`;
+    }
   };
 
   if (loading) {
@@ -134,7 +166,7 @@ export default function AuctionDetailsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4">
         <div className="max-w-md mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">{t('error')}: </strong>
+          <strong className="font-bold">Error: </strong>
           <span className="block sm:inline">{error}</span>
         </div>
       </div>
@@ -145,12 +177,15 @@ export default function AuctionDetailsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4">
         <div className="max-w-md mx-auto bg-gray-100 border border-gray-400 text-gray-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">{t('no_data')}: </strong>
-          <span className="block sm:inline">{t('auction_not_found')}</span>
+          <strong className="font-bold">No Data: </strong>
+          <span className="block sm:inline">Auction not found</span>
         </div>
       </div>
     );
   }
+
+  const isAuctionActive = auction.status === 'ACTIVE' && new Date(auction.endDate) > new Date();
+  const winningBid = bids.find(bid => bid.isWinner) || (bids.length > 0 ? bids[0] : null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 pb-20">
@@ -193,11 +228,11 @@ export default function AuctionDetailsPage() {
               </div>
               <div className="bg-blue-50 p-3 rounded-lg">
                 <p className="text-sm text-slate-600">{t('current_bid')}</p>
-                <p className="font-medium">₹{auction.currentBid}</p>
+                <p className="font-medium">₹{auction.currentBid.toLocaleString()}</p>
               </div>
               <div className="bg-amber-50 p-3 rounded-lg">
                 <p className="text-sm text-slate-600">{t('starting_price')}</p>
-                <p className="font-medium">₹{auction.startingPrice}</p>
+                <p className="font-medium">₹{auction.startingPrice.toLocaleString()}</p>
               </div>
               <div className="bg-purple-50 p-3 rounded-lg">
                 <p className="text-sm text-slate-600">{t('time_remaining')}</p>
@@ -212,7 +247,7 @@ export default function AuctionDetailsPage() {
               </div>
               <div className="flex items-center space-x-2">
                 <Calendar className="w-5 h-5 text-blue-600" />
-                <span>{t('ends_on')} {formatDate(auction.endDate)}</span>
+                <span>{t('ends_on')} {formatDate(auction.endDate)} at {formatTime(auction.endDate)}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Leaf className="w-5 h-5 text-emerald-600" />
@@ -229,45 +264,100 @@ export default function AuctionDetailsPage() {
                 <p className="text-blue-700">{auction.governmentNotes}</p>
               </div>
             )}
+            
+            {/* Winner Announcement */}
+            {winningBid && (
+              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <h3 className="font-medium text-yellow-800 mb-2 flex items-center">
+                  <Trophy className="w-5 h-5 mr-2" />
+                  {winningBid.isWinner ? 'Winning Bid' : 'Leading Bid'}
+                </h3>
+                <p className="text-yellow-700">
+                  <span className="font-bold">₹{winningBid.amount.toLocaleString()}</span> by {winningBid.bidderName}
+                </p>
+              </div>
+            )}
           </div>
           
           {/* Place Bid Section */}
-          <div className="glass-card rounded-xl p-6 shadow-sm">
-            <h3 className="text-xl font-semibold text-slate-800 mb-4">{t('place_bid')}</h3>
-            
-            <form onSubmit={handlePlaceBid} className="space-y-4">
-              <div>
-                <label htmlFor="bidAmount" className="block text-sm font-medium text-slate-700 mb-1">
-                  {t('bid_amount')}
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <IndianRupee className="h-5 w-5 text-slate-400" />
-                  </div>
-                  <input
-                    type="number"
-                    id="bidAmount"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-green-500 focus:border-green-500"
-                    placeholder={t('enter_bid_amount')}
-                    min={auction.currentBid + 1}
-                    required
-                  />
-                </div>
-                <p className="mt-1 text-sm text-slate-500">
-                  {t('minimum_bid')}: ₹{auction.currentBid + 1}
-                </p>
-              </div>
+          {isAuctionActive && (
+            <div className="glass-card rounded-xl p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-slate-800 mb-4">{t('place_bid')}</h3>
               
-              <button
-                type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50"
-              >
-                {t('submit_bid')}
-              </button>
-            </form>
-          </div>
+              <form onSubmit={handlePlaceBid} className="space-y-4">
+                <div>
+                  <label htmlFor="bidAmount" className="block text-sm font-medium text-slate-700 mb-1">
+                    {t('bid_amount')}
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <IndianRupee className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <input
+                      type="number"
+                      id="bidAmount"
+                      value={bidAmount}
+                      onChange={(e) => setBidAmount(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                      placeholder={t('enter_bid_amount')}
+                      min={auction.currentBid + 1}
+                      required
+                    />
+                  </div>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {t('minimum_bid')}: ₹{auction.currentBid + 1}
+                  </p>
+                </div>
+                
+                <button
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50"
+                >
+                  {t('submit_bid')}
+                </button>
+              </form>
+            </div>
+          )}
+          
+          {/* Bidding History */}
+          {bids.length > 0 && (
+            <div className="glass-card rounded-xl p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+                <History className="w-5 h-5 mr-2" />
+                {t('bidding_history')}
+              </h3>
+              
+              <div className="space-y-3">
+                {bids.map((bid) => (
+                  <div 
+                    key={bid.id} 
+                    className={`p-3 rounded-lg border ${
+                      bid.isWinner 
+                        ? 'bg-yellow-50 border-yellow-200' 
+                        : 'bg-white border-slate-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-medium text-slate-800">{bid.bidderName}</p>
+                        <p className="text-sm text-slate-600">
+                          {formatDate(bid.timestamp)} at {formatTime(bid.timestamp)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-slate-800">₹{bid.amount.toLocaleString()}</p>
+                        {bid.isWinner && (
+                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                            Winner
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           {/* Documents Section */}
           <div className="glass-card rounded-xl p-6 shadow-sm">
@@ -315,7 +405,7 @@ export default function AuctionDetailsPage() {
             <span className="text-xs">Home</span>
           </Link>
           <Link href="/missions" className="flex flex-col items-center py-2 text-slate-400 touch-target">
-            <Target className="w-6 h-6" />
+            <CheckCircle className="w-6 h-6" />
             <span className="text-xs">Missions</span>
           </Link>
           <Link href="/auction/listings" className="flex flex-col items-center py-2 text-green-600 touch-target">

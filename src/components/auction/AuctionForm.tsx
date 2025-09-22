@@ -22,7 +22,7 @@ export default function AuctionForm({ farmId, cropScoreId, onApplicationSubmitte
     setError(null);
     
     try {
-      const response = await fetch('/api/auction/apply', {
+      const response = await fetch('/api/auction', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

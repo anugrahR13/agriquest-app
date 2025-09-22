@@ -25,14 +25,13 @@ export default function AuctionApplyPage() {
   useEffect(() => {
     // In a real implementation, we would get the farmId from the user context
     // For demo purposes, we'll use a mock farmId
-    const mockFarmId = 'farm_123';
-    fetchCropScore(mockFarmId);
+    fetchCropScore();
   }, []);
 
-  const fetchCropScore = async (farmId: string) => {
+  const fetchCropScore = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/crop-score/${farmId}`);
+      const response = await fetch(`/api/crop-score`);
       const data = await response.json();
       
       if (response.ok) {

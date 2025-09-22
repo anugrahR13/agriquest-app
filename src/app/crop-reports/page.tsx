@@ -13,10 +13,9 @@ import {
   TrendingUp,
   Eye,
   ArrowLeft,
-  Target as TargetIcon,
-  Sprout as SproutIcon
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { 
   LineChart, 
@@ -165,10 +164,15 @@ export default function CropReportsPage() {
           // Report List View
           <div className="space-y-6">
             <div className="glass-card rounded-xl p-6 shadow-sm">
-              <h2 className="text-2xl font-bold text-slate-800 mb-4">Your Crop Reports</h2>
-              <p className="text-slate-600 mb-6">
-                Detailed analytics and credit reports for your crops
-              </p>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-800">Your Crop Reports</h2>
+                  <p className="text-slate-600">Detailed analytics and credit reports for your crops</p>
+                </div>
+                <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                  Generate New Report
+                </button>
+              </div>
               
               {mockReports.length > 0 ? (
                 <div className="space-y-4">
@@ -229,6 +233,45 @@ export default function CropReportsPage() {
                   </button>
                 </div>
               )}
+            </div>
+            
+            {/* Info Section */}
+            <div className="glass-card rounded-xl p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">About Crop Reports</h3>
+              
+              <div className="space-y-4 text-sm text-slate-600">
+                <p>
+                  Crop reports provide detailed analysis of your farm's health and performance. 
+                  These reports are essential for government auction applications and help determine fair pricing for your crops.
+                </p>
+                
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <h4 className="font-medium text-slate-800 mb-2 flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                    Benefits of Crop Reports
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>AI-powered crop health assessment (0-100 score)</li>
+                    <li>Predicted yield estimates</li>
+                    <li>Sustainability metrics</li>
+                    <li>Personalized recommendations for improvement</li>
+                    <li>Required for government auction applications</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <h4 className="font-medium text-slate-800 mb-2 flex items-center">
+                    <AlertCircle className="w-4 h-4 text-blue-600 mr-2" />
+                    How to Generate Reports
+                  </h4>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Upload photos of your crops at different growth stages</li>
+                    <li>Our AI analyzes the images for health indicators</li>
+                    <li>Review the generated report and recommendations</li>
+                    <li>Use the report for auction applications or personal reference</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -292,6 +335,13 @@ export default function CropReportsPage() {
                   <Printer className="w-4 h-4" />
                   <span>Print</span>
                 </button>
+                <Link
+                  href="/auction/apply"
+                  className="flex items-center space-x-2 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors touch-target"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Apply for Auction</span>
+                </Link>
               </div>
             </div>
             
@@ -319,6 +369,11 @@ export default function CropReportsPage() {
                   style={{ width: `${selectedReport.healthScore}%` }}
                 ></div>
               </div>
+              
+              <p className="text-slate-600 text-sm">
+                Your crop health score is based on AI analysis of growth patterns, color variations, and potential disease indicators.
+                A higher score indicates better crop health and potential yield.
+              </p>
             </div>
             
             {/* Growth Timeline */}
@@ -427,11 +482,9 @@ export default function CropReportsPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {selectedReport.photos.map((photo) => (
                   <div key={photo.id} className="aspect-square rounded-lg overflow-hidden">
-                    <Image 
+                    <img 
                       src={photo.url} 
                       alt={photo.caption} 
-                      width={200}
-                      height={200}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
                     />
                     <p className="text-xs text-center mt-1 text-slate-600">{photo.stage}</p>
@@ -467,11 +520,11 @@ export default function CropReportsPage() {
             <span className="text-xs">Home</span>
           </Link>
           <Link href="/missions" className="flex flex-col items-center py-2 text-slate-400 touch-target">
-            <TargetIcon className="w-6 h-6" />
+            <CheckCircle className="w-6 h-6" />
             <span className="text-xs">Missions</span>
           </Link>
           <Link href="/crop-tracking" className="flex flex-col items-center py-2 text-slate-400 touch-target">
-            <SproutIcon className="w-6 h-6" />
+            <TrendingUp className="w-6 h-6" />
             <span className="text-xs">Crops</span>
           </Link>
           <Link href="/crop-reports" className="flex flex-col items-center py-2 text-green-600 touch-target">

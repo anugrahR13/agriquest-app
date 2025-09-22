@@ -129,6 +129,7 @@ model User {
   farmer            Farmer?
   adminProfile      AdminProfile?
   farmProfiles      FarmProfile[]
+  bids              Bid[]
   otpCodes          OtpCode[]
   sentNotifications Notification[] @relation("NotificationSender")
   receivedNotifications Notification[] @relation("NotificationReceiver")
@@ -734,6 +735,52 @@ model HelpDeskMessage {
   @@map("help_desk_messages")
 }
 
+// Auction model for government-type auction system
+model Auction {
+  id              Int         @id @default(autoincrement())
+  farmId          String
+  cropScoreId     Int
+  cropType        String
+  variety         String?
+  quantity        Float
+  startingPrice   Float
+  currentBid      Float       @default(0)
+  startDate       DateTime    @default(now())
+  endDate         DateTime
+  farmerName      String
+  farmLocation    String
+  status          String      @default("PENDING") // PENDING, ACTIVE, ENDED, CANCELLED
+  cropScore       Float
+  reportUrl       String?
+  govtNotes       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  farm            FarmProfile @relation(fields: [farmId], references: [id])
+  cropScoreRecord CropScore   @relation(fields: [cropScoreId], references: [id])
+  bids            Bid[]
+
+  @@map("auctions")
+}
+
+// Bid model for auction bidding system
+model Bid {
+  id              Int         @id @default(autoincrement())
+  auctionId       Int
+  bidderId        String
+  amount          Float
+  isWinner        Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  auction         Auction     @relation(fields: [auctionId], references: [id])
+  bidder          User        @relation(fields: [bidderId], references: [id])
+
+  @@map("bids")
+}
+
 // Add the new models for Mission & Growth Section
 model FarmProfile {
   id          String    @id @default(cuid())
@@ -747,6 +794,7 @@ model FarmProfile {
   missionPlans MissionPlan[]
   cropScores CropScore[]
   auctionRequests AuctionRequest[]
+  auctions Auction[]
   user        User @relation(fields: [userId], references: [id], map: "farm_profile_user_fkey")
   farmer      Farmer @relation(fields: [userId], references: [userId], map: "farm_profile_farmer_fkey")
   createdAt   DateTime @default(now())
@@ -815,6 +863,7 @@ model CropScore {
   createdAt DateTime @default(now())
   farm      FarmProfile @relation(fields: [farmId], references: [id])
   auctionRequests AuctionRequest[]
+  auctionRecords Auction[]
 }
 
 model AuctionRequest {

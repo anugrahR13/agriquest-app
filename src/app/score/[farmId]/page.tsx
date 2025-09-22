@@ -24,8 +24,7 @@ interface ReportData {
   recommendations: string[];
 }
 
-// Fix the params type to match Next.js expectations
-export default function ScorePage({ params }: { params: Promise<{ farmId: string }> }) {
+export default function ScorePage({ params }: { params: { farmId: string } }) {
   const { t } = useTranslation();
   const router = useRouter();
   const [cropScore, setCropScore] = useState<CropScore | null>(null);
@@ -33,16 +32,12 @@ export default function ScorePage({ params }: { params: Promise<{ farmId: string
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Resolve the params promise
-  const resolvedParams = params instanceof Promise ? params : Promise.resolve(params);
-
   const fetchCropScore = useCallback(async () => {
-    const { farmId } = await resolvedParams;
-    if (!farmId) return;
+    if (!params.farmId) return;
     
     try {
       setLoading(true);
-      const response = await fetch(`/api/crop-score/${farmId}`);
+      const response = await fetch(`/api/crop-score/${params.farmId}`);
       const data = await response.json();
       
       if (response.ok) {
@@ -66,7 +61,7 @@ export default function ScorePage({ params }: { params: Promise<{ farmId: string
     } finally {
       setLoading(false);
     }
-  }, [resolvedParams]);
+  }, [params.farmId]);
 
   useEffect(() => {
     fetchCropScore();

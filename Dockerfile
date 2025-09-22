@@ -5,7 +5,7 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Install dependencies for native modules
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ curl
 
 # Copy package files
 COPY package*.json ./
@@ -23,12 +23,16 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Expose port
-EXPOSE 3000 3001
+# Make startup script executable
+COPY docker-start.sh .
+RUN chmod +x docker-start.sh
 
-# Create startup script
-RUN echo '#!/bin/sh\nnpm run db:migrate\nnpm run dev:full' > /app/start.sh
-RUN chmod +x /app/start.sh
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Start the application
-CMD [\"/app/start.sh\"]"
+CMD ["./docker-start.sh"]

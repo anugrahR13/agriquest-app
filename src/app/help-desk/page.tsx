@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   MessageCircle, 
   Plus, 
@@ -70,7 +70,11 @@ export default function HelpDeskPage() {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterPriority, setFilterPriority] = useState('ALL');
 
-  const fetchTickets = useCallback(async () => {
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const fetchTickets = async () => {
     try {
       setLoading(true);
       // In a real app, this would be an API call
@@ -218,11 +222,7 @@ export default function HelpDeskPage() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
-
-  useEffect(() => {
-    fetchTickets();
-  }, [fetchTickets]);
+  };
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();

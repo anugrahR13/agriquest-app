@@ -1,97 +1,106 @@
-import { PrismaClient, CropCategory } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting AgriQuest database seeding...');
-
-  // Clear existing data
-  console.log('🧹 Cleaning existing data...');
-  await prisma.user.deleteMany();
-  await prisma.farmer.deleteMany();
-  await prisma.adminProfile.deleteMany();
-
-  // 1. Create Admin User
-  console.log('👨‍💼 Creating admin user...');
-  const adminUser = await prisma.user.create({
-    data: {
+  // Create a test user (farmer)
+  const farmer = await prisma.user.upsert({
+    where: { phone: '9999999999' },
+    update: {},
+    create: {
       phone: '9999999999',
       phoneVerified: true,
-      firstName: 'System',
-      lastName: 'Admin',
-      role: 'ADMIN',
-      preferredLanguage: 'en',
-      isActive: true,
-    },
-  });
-
-  const adminProfile = await prisma.adminProfile.create({
-    data: {
-      userId: adminUser.id,
-      department: 'Agriculture Technology',
-      permissions: {
-        canCreateMissions: true,
-        canModerate: true,
-        canManageUsers: true,
-        canViewAnalytics: true,
-      },
-    },
-  });
-
-  // 2. Create Sample Farmers
-  console.log('👨‍🌾 Creating sample farmers...');
-  const user = await prisma.user.create({
-    data: {
-      phone: '9876543210',
-      phoneVerified: true,
-      firstName: 'Ramesh',
-      lastName: 'Kumar',
+      firstName: 'Test',
+      lastName: 'Farmer',
       role: 'FARMER',
-      preferredLanguage: 'en',
       isActive: true,
+      preferredLanguage: 'en',
     },
   });
 
-  const farmer = await prisma.farmer.create({
-    data: {
-      userId: user.id,
-      farmerId: `AGQ${Date.now().toString().slice(-6)}`,
-      farmName: 'Kumar Organic Farm',
-      region: 'Uttar Pradesh',
-      village: 'Ghazipur',
-      panchayat: 'Ghazipur Gram Panchayat',
+  // Create a farmer profile
+  const farmerProfile = await prisma.farmer.upsert({
+    where: { userId: farmer.id },
+    update: {},
+    create: {
+      userId: farmer.id,
+      farmerId: 'FARMER-001',
+      farmName: 'Test Farm',
+      region: 'Test Region',
+      village: 'Test Village',
+      panchayat: 'Test Panchayat',
       farmSize: 5.5,
-      primaryCrops: {
-        set: [CropCategory.CEREALS, CropCategory.PULSES]
-      },
-      farmingExperience: 15,
-      educationLevel: 'High School',
+      primaryCrops: ['CEREALS'],
+      farmingExperience: 10,
+      sustainabilityScore: 85.5,
+      level: 5,
+      isVerified: true,
       totalPoints: 1500,
-      currentStreak: 7,
-      longestStreak: 15,
-      sustainabilityScore: 75,
-      level: 2,
     },
   });
 
-  console.log('✅ Database seeding completed successfully!');
-  console.log(`
-📊 Summary:
-- 1 admin created
-- 1 farmer created
-`);
-  console.log('🎮 Demo Login Credentials:');
-  console.log('Admin Phone: 9999999999 (Use OTP: 123456 in development)');
-  console.log('Demo Farmer Phone: 9876543210 (Use OTP: 123456 in development)');
-  console.log('\n🌱 AgriQuest is ready to use!');
+  // Create a farm profile
+  const farmProfile = await prisma.farmProfile.upsert({
+    where: { id: 'farm-001' },
+    update: {},
+    create: {
+      id: 'farm-001',
+      userId: farmer.id,
+      cropType: 'WHEAT',
+      soilInfo: {},
+      seedVariety: 'HD 2967',
+      sowingDate: new Date(),
+      size: 5.5,
+      location: 'Test Location',
+    },
+  });
+
+  // Create a crop score
+  const cropScore = await prisma.cropScore.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      farmId: farmProfile.id,
+      score: 8.5,
+      reportUrl: '/sample-report.pdf',
+    },
+  });
+
+  // Create a test auction
+  const auction = await prisma.auction.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      farmId: farmProfile.id,
+      cropScoreId: cropScore.id,
+      cropType: 'WHEAT',
+      variety: 'HD 2967',
+      quantity: 5.5,
+      startingPrice: 2000,
+      currentBid: 2000,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+      farmerName: 'Test Farmer',
+      farmLocation: 'Test Location',
+      status: 'ACTIVE',
+      cropScore: 8.5,
+      reportUrl: '/sample-report.pdf',
+      govtNotes: 'High quality produce with excellent health score. Recommended for premium markets.',
+    },
+  });
+
+  console.log('Seed data created successfully!');
+  console.log('Farmer ID:', farmer.id);
+  console.log('Farm Profile ID:', farmProfile.id);
+  console.log('Crop Score ID:', cropScore.id);
+  console.log('Auction ID:', auction.id);
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error('❌ Error during seeding:', e);
-    await prisma.$disconnect();
+  .catch((e) => {
+    console.error(e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });

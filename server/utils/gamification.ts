@@ -1,137 +1,257 @@
-/**
- * Gamification utilities for AgriQuest
- * 
- * This module provides functions for awarding points and badges based on farmer activities,
- * particularly crop scores and sustainable farming practices.
- */
-
-import { PrismaClient, Badge, BadgeType, CropCategory } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { io } from '../index';
 
 const prisma = new PrismaClient();
 
 /**
- * Initialize crop-related badges in the database
- * @returns Object containing the created badges
+ * Award points and badges for high crop scores
+ * @param farmId - The ID of the farm
+ * @param cropScore - The final crop score (0-10)
+ * @returns The awarded points and badges
  */
-export async function initializeCropBadges() {
-  console.log('🌱 Initializing crop-related badges...');
-  
-  // Create Top Crop Score badge
-  const topCropBadge = await prisma.badge.upsert({
-    where: { name: 'Top Crop Score' },
-    update: {},
-    create: {
-      name: 'Top Crop Score',
-      description: 'Achieved a crop health score of 90+',
-      type: BadgeType.ACHIEVEMENT,
-      iconUrl: '/badges/top-crop-score.png',
-      colorCode: '#10B981',
-      criteria: { minCropScore: 90 },
-      pointsReward: 200,
-      rarity: 'RARE',
-    },
-  });
+export async function awardPointsAndBadgesForCropScore(farmId: string, cropScore: number) {
+  try {
+    const farmer = await prisma.farmer.findUnique({
+      where: { id: farmId },
+      include: {
+        user: true
+      }
+    });
 
-  // Create Excellent Crop Health badge
-  const excellentCropBadge = await prisma.badge.upsert({
-    where: { name: 'Excellent Crop Health' },
-    update: {},
-    create: {
-      name: 'Excellent Crop Health',
-      description: 'Maintained excellent crop health across multiple assessments',
-      type: BadgeType.MILESTONE,
-      iconUrl: '/badges/excellent-crop-health.png',
-      colorCode: '#059669',
-      criteria: { consistentHighScores: 5, minScore: 80 },
-      pointsReward: 150,
-      rarity: 'EPIC',
-    },
-  });
+    if (!farmer) {
+      throw new Error('Farmer not found');
+    }
 
-  console.log('✅ Crop badges initialized successfully');
-  
-  return {
-    topCropBadge,
-    excellentCropBadge
-  };
+    // Calculate points based on crop score
+    // Higher scores get more points (0-10 score maps to 0-500 points)
+    const points = Math.round(cropScore * 50);
+    
+    // Update farmer's total points
+    const updatedFarmer = await prisma.farmer.update({
+      where: { id: farmId },
+      data: {
+        totalPoints: {
+          increment: points
+        }
+      }
+    });
+
+    // Check for badges to award
+    const badgesToAward: string[] = [];
+    
+    // Award "Top Crop Score" badge for scores 9+
+    if (cropScore >= 9) {
+      const topCropBadge = await prisma.badge.findFirst({
+        where: { name: 'Top Crop Score' }
+      });
+      
+      if (topCropBadge) {
+        const existingBadge = await prisma.farmerBadge.findFirst({
+          where: {
+            farmerId: farmId,
+            badgeId: topCropBadge.id
+          }
+        });
+        
+        if (!existingBadge) {
+          await prisma.farmerBadge.create({
+            data: {
+              farmerId: farmId,
+              badgeId: topCropBadge.id
+            }
+          });
+          badgesToAward.push(topCropBadge.name);
+        }
+      }
+    }
+    
+    // Award "Excellent Crop Health" badge for scores 8+
+    if (cropScore >= 8) {
+      const excellentCropBadge = await prisma.badge.findFirst({
+        where: { name: 'Excellent Crop Health' }
+      });
+      
+      if (excellentCropBadge) {
+        const existingBadge = await prisma.farmerBadge.findFirst({
+          where: {
+            farmerId: farmId,
+            badgeId: excellentCropBadge.id
+          }
+        });
+        
+        if (!existingBadge) {
+          await prisma.farmerBadge.create({
+            data: {
+              farmerId: farmId,
+              badgeId: excellentCropBadge.id
+            }
+          });
+          badgesToAward.push(excellentCropBadge.name);
+        }
+      }
+    }
+    
+    // Update leaderboard entries
+    await updateLeaderboardEntries(farmId, points);
+    
+    // Notify via Socket.IO
+    if (io) {
+      // Emit to user's room
+      io.emit(`farmer-${farmId}-points-update`, {
+        pointsAwarded: points,
+        totalPoints: updatedFarmer.totalPoints + points,
+        badgesAwarded: badgesToAward
+      });
+      
+      // Emit to leaderboard rooms
+      if (farmer.region) {
+        io.to(`leaderboard-REGION-${farmer.region}`).emit('leaderboard-update', {
+          region: farmer.region
+        });
+      }
+      
+      if (farmer.panchayat) {
+        io.to(`leaderboard-PANCHAYAT-${farmer.panchayat}`).emit('leaderboard-update', {
+          panchayat: farmer.panchayat
+        });
+      }
+    }
+    
+    return {
+      success: true,
+      pointsAwarded: points,
+      badgesAwarded: badgesToAward
+    };
+  } catch (error) {
+    console.error('Error awarding points and badges for crop score:', error);
+    throw error;
+  }
 }
 
 /**
- * Award points and badges for a crop score
- * @param farmerId The ID of the farmer
- * @param cropScore The crop health score (0-100)
- * @param cropType The type of crop
- * @returns Object containing awarded points and badges
+ * Update leaderboard entries with new points
+ * @param farmId - The ID of the farm
+ * @param points - Points to add
  */
-export async function awardPointsAndBadgesForCropScore(
-  farmerId: string,
-  cropScore: number,
-  cropType: CropCategory
-) {
-  console.log(`🏆 Awarding points and badges for farmer ${farmerId} with crop score ${cropScore}`);
-  
-  const awardedBadges: Badge[] = [];
-  let pointsAwarded = 0;
-  
-  // Award points based on crop score
-  if (cropScore >= 90) {
-    pointsAwarded += 100;
-  } else if (cropScore >= 80) {
-    pointsAwarded += 75;
-  } else if (cropScore >= 70) {
-    pointsAwarded += 50;
-  } else if (cropScore >= 60) {
-    pointsAwarded += 25;
-  }
-  
-  // Check for Top Crop Score badge
-  if (cropScore >= 90) {
-    const topCropBadge = await prisma.badge.findUnique({
-      where: { name: 'Top Crop Score' }
+async function updateLeaderboardEntries(farmId: string, points: number) {
+  try {
+    // Get the farmer with region and panchayat info
+    const farmer = await prisma.farmer.findUnique({
+      where: { id: farmId }
     });
-    
-    if (topCropBadge) {
-      // Check if farmer already has this badge
-      const existingBadge = await prisma.farmerBadge.findUnique({
+
+    if (!farmer) {
+      throw new Error('Farmer not found');
+    }
+
+    // Get all active leaderboards for this farmer
+    const leaderboards = await prisma.leaderboard.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { type: 'GLOBAL' },
+          { type: 'REGION', scope: farmer.region || undefined },
+          { type: 'PANCHAYAT', scope: farmer.panchayat || undefined }
+        ]
+      }
+    });
+
+    // Update entries in each leaderboard
+    for (const leaderboard of leaderboards) {
+      // Get existing entry or create new one
+      let entry = await prisma.leaderboardEntry.findUnique({
         where: {
-          farmerId_badgeId: {
-            farmerId,
-            badgeId: topCropBadge.id
+          leaderboardId_farmerId: {
+            leaderboardId: leaderboard.id,
+            farmerId: farmId
           }
         }
       });
-      
-      if (!existingBadge) {
-        await prisma.farmerBadge.create({
+
+      if (entry) {
+        // Update existing entry
+        await prisma.leaderboardEntry.update({
+          where: { id: entry.id },
           data: {
-            farmerId,
-            badgeId: topCropBadge.id,
-            earnedAt: new Date(),
-            criteria: { cropScore, cropType }
+            points: {
+              increment: points
+            },
+            score: {
+              increment: points
+            },
+            lastUpdated: new Date()
           }
         });
-        awardedBadges.push(topCropBadge);
-        pointsAwarded += topCropBadge.pointsReward;
+      } else {
+        // Create new entry
+        await prisma.leaderboardEntry.create({
+          data: {
+            leaderboardId: leaderboard.id,
+            farmerId: farmId,
+            rank: 0, // Will be updated when leaderboard is refreshed
+            score: points,
+            points: points,
+            missionsCompleted: 0,
+            streak: 0,
+            badges: 0,
+            metadata: {
+              region: farmer.region,
+              village: farmer.village,
+              sustainabilityScore: farmer.sustainabilityScore
+            }
+          }
+        });
       }
     }
+  } catch (error) {
+    console.error('Error updating leaderboard entries:', error);
+    // Don't throw error as this is supplementary functionality
   }
-  
-  // Update farmer's total points
-  if (pointsAwarded > 0) {
-    await prisma.farmer.update({
-      where: { userId: farmerId },
-      data: {
-        totalPoints: {
-          increment: pointsAwarded
-        }
+}
+
+/**
+ * Create crop-related badges if they don't exist
+ */
+export async function initializeCropBadges() {
+  try {
+    // Create "Top Crop Score" badge
+    const topCropBadge = await prisma.badge.upsert({
+      where: { name: 'Top Crop Score' },
+      update: {},
+      create: {
+        name: 'Top Crop Score',
+        description: 'Achieved an exceptional crop health score of 9 or higher',
+        type: 'ACHIEVEMENT',
+        iconUrl: '/badges/top-crop-score.png',
+        colorCode: '#10B981',
+        criteria: { minCropScore: 9 },
+        pointsReward: 300,
+        rarity: 'EPIC'
       }
     });
+
+    // Create "Excellent Crop Health" badge
+    const excellentCropBadge = await prisma.badge.upsert({
+      where: { name: 'Excellent Crop Health' },
+      update: {},
+      create: {
+        name: 'Excellent Crop Health',
+        description: 'Achieved an excellent crop health score of 8 or higher',
+        type: 'ACHIEVEMENT',
+        iconUrl: '/badges/excellent-crop-health.png',
+        colorCode: '#3B82F6',
+        criteria: { minCropScore: 8 },
+        pointsReward: 200,
+        rarity: 'RARE'
+      }
+    });
+
+    return {
+      topCropBadge,
+      excellentCropBadge
+    };
+  } catch (error) {
+    console.error('Error initializing crop badges:', error);
+    throw error;
   }
-  
-  console.log(`✅ Awarded ${pointsAwarded} points and ${awardedBadges.length} badges`);
-  
-  return {
-    pointsAwarded,
-    awardedBadges
-  };
 }

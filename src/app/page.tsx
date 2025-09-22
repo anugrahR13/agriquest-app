@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { Menu, X, FileText } from 'lucide-react';
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -14,6 +16,7 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -85,8 +88,99 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* Navigation Bar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/" className="flex-shrink-0 flex items-center">
+                <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  AgriQuest
+                </span>
+              </Link>
+            </div>
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="/dashboard" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+                Dashboard
+              </Link>
+              <Link href="/missions" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+                Missions
+              </Link>
+              <Link href="/auction/listings" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+                Auctions
+              </Link>
+              <Link href="/community" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+                Community
+              </Link>
+              <Link href="/eoi" className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-lg animate-pulse">
+                Express Interest
+              </Link>
+            </div>
+            
+            {/* Mobile menu button */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-green-600 focus:outline-none"
+              >
+                {isMenuOpen ? (
+                  <X className="block h-6 w-6" />
+                ) : (
+                  <Menu className="block h-6 w-6" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+              <Link 
+                href="/dashboard" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link 
+                href="/missions" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Missions
+              </Link>
+              <Link 
+                href="/auction/listings" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Auctions
+              </Link>
+              <Link 
+                href="/community" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Community
+              </Link>
+              <Link 
+                href="/eoi" 
+                className="block px-3 py-2 rounded-md text-base font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg animate-pulse"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Express Interest
+              </Link>
+            </div>
+          </div>
+        )}
+      </nav>
+
       {/* Hero Section */}
-      <div className="relative h-screen overflow-hidden">
+      <div className="relative h-screen overflow-hidden pt-16">
         {/* Background image with overlay */}
         <div 
           className="absolute inset-0 bg-cover bg-center"
@@ -101,24 +195,32 @@ export default function Home() {
         <div className="relative z-10 flex items-center justify-center h-full px-4">
           <div className="glass-card max-w-2xl w-full p-8 md:p-12 text-center fade-in">
             <div className="mb-6">
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-fade-in-down">
                 Join the Sustainable Farming Movement
               </h1>
-              <p className="text-xl text-white opacity-90">
+              <p className="text-xl text-white opacity-90 animate-fade-in-up">
                 Empowering farmers through technology and community
               </p>
             </div>
             
-            <p className="text-lg text-white mb-8 opacity-90">
+            <p className="text-lg text-white mb-8 opacity-90 animate-fade-in-up delay-100">
               AgriQuest is a gamified platform that helps farmers adopt sustainable practices while earning rewards. Join our community of forward-thinking farmers today.
             </p>
             
-            <button 
-              onClick={() => document.getElementById('eoi-form')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-gradient-to-r from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600 text-white font-bold py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 pulse"
-            >
-              Express Interest
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up delay-200">
+              <button 
+                onClick={() => document.getElementById('eoi-form')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-gradient-to-r from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600 text-white font-bold py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 pulse shadow-lg"
+              >
+                Express Interest
+              </button>
+              <Link 
+                href="/demo-login" 
+                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold py-3 px-8 rounded-full text-lg transition-all duration-300 border border-white/30"
+              >
+                Try Demo
+              </Link>
+            </div>
           </div>
         </div>
         
@@ -134,17 +236,17 @@ export default function Home() {
       <section className="py-16 px-4 bg-gradient-to-b from-white to-green-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 animate-fade-in">
               Why Join AgriQuest?
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-fade-in delay-100">
               Discover the benefits of becoming part of our sustainable farming community
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Benefit 1 */}
-            <div className="glass-card p-6 text-center hover:transform hover:scale-105 transition-all duration-300">
+            <div className="glass-card p-6 text-center hover:transform hover:scale-105 transition-all duration-300 animate-fade-in-up">
               <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -159,7 +261,7 @@ export default function Home() {
             </div>
             
             {/* Benefit 2 */}
-            <div className="glass-card p-6 text-center hover:transform hover:scale-105 transition-all duration-300">
+            <div className="glass-card p-6 text-center hover:transform hover:scale-105 transition-all duration-300 animate-fade-in-up delay-100">
               <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
@@ -174,7 +276,7 @@ export default function Home() {
             </div>
             
             {/* Benefit 3 */}
-            <div className="glass-card p-6 text-center hover:transform hover:scale-105 transition-all duration-300">
+            <div className="glass-card p-6 text-center hover:transform hover:scale-105 transition-all duration-300 animate-fade-in-up delay-200">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -189,17 +291,15 @@ export default function Home() {
             </div>
             
             {/* Benefit 4 */}
-            <div className="glass-card p-6 text-center hover:transform hover:scale-105 transition-all duration-300">
+            <div className="glass-card p-6 text-center hover:transform hover:scale-105 transition-all duration-300 animate-fade-in-up delay-300">
               <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
+                <FileText className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">
-                Gamification & Rewards
+                Crop Reports & Analytics
               </h3>
               <p className="text-gray-600">
-                Earn points, badges, and rewards for sustainable farming practices
+                Generate detailed crop reports for better decision making and government auctions
               </p>
             </div>
           </div>
@@ -210,10 +310,10 @@ export default function Home() {
       <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 animate-fade-in">
               How It Works
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-fade-in delay-100">
               Get started with AgriQuest in four simple steps
             </p>
           </div>
@@ -224,7 +324,7 @@ export default function Home() {
             
             <div className="space-y-12">
               {/* Step 1 */}
-              <div className="relative flex flex-col md:flex-row items-center">
+              <div className="relative flex flex-col md:flex-row items-center animate-fade-in-up">
                 <div className="md:w-1/2 mb-6 md:mb-0 md:pr-12 text-center md:text-right">
                   <h3 className="text-2xl font-bold text-gray-800 mb-2">
                     Create Your Profile
@@ -241,7 +341,7 @@ export default function Home() {
               </div>
               
               {/* Step 2 */}
-              <div className="relative flex flex-col md:flex-row items-center">
+              <div className="relative flex flex-col md:flex-row items-center animate-fade-in-up delay-100">
                 <div className="md:w-1/2 md:pl-12 order-first md:order-last mb-6 md:mb-0 text-center md:text-left">
                   <h3 className="text-2xl font-bold text-gray-800 mb-2">
                     Complete Missions
@@ -258,7 +358,7 @@ export default function Home() {
               </div>
               
               {/* Step 3 */}
-              <div className="relative flex flex-col md:flex-row items-center">
+              <div className="relative flex flex-col md:flex-row items-center animate-fade-in-up delay-200">
                 <div className="md:w-1/2 mb-6 md:mb-0 md:pr-12 text-center md:text-right">
                   <h3 className="text-2xl font-bold text-gray-800 mb-2">
                     Generate Crop Score
@@ -275,7 +375,7 @@ export default function Home() {
               </div>
               
               {/* Step 4 */}
-              <div className="relative flex flex-col md:flex-row items-center">
+              <div className="relative flex flex-col md:flex-row items-center animate-fade-in-up delay-300">
                 <div className="md:w-1/2 md:pl-12 order-first md:order-last mb-6 md:mb-0 text-center md:text-left">
                   <h3 className="text-2xl font-bold text-gray-800 mb-2">
                     Access Government Auctions
@@ -299,16 +399,16 @@ export default function Home() {
       <section id="eoi-form" className="py-16 px-4 bg-gradient-to-b from-green-50 to-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 animate-fade-in">
               Express Interest
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-fade-in delay-100">
               Join our waiting list to be among the first to access AgriQuest when we launch
             </p>
           </div>
           
           {isSubmitted ? (
-            <div className="glass-card p-8 md:p-12 text-center">
+            <div className="glass-card p-8 md:p-12 text-center animate-fade-in">
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -318,7 +418,7 @@ export default function Home() {
                 Thank You!
               </h3>
               <p className="text-gray-600 mb-6">
-                We&apos;ve received your expression of interest. Our team will contact you soon with more information about AgriQuest.
+                We've received your expression of interest. Our team will contact you soon with more information about AgriQuest.
               </p>
               <button 
                 onClick={() => {
@@ -338,7 +438,7 @@ export default function Home() {
               </button>
             </div>
           ) : (
-            <div className="glass-card p-6 md:p-8">
+            <div className="glass-card p-6 md:p-8 animate-fade-in">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -353,7 +453,7 @@ export default function Home() {
                       onChange={handleChange}
                       className={`w-full px-4 py-3 rounded-lg border ${
                         errors.name ? 'border-red-500' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                      } focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300`}
                       placeholder="Enter your full name"
                     />
                     {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
@@ -371,7 +471,7 @@ export default function Home() {
                       onChange={handleChange}
                       className={`w-full px-4 py-3 rounded-lg border ${
                         errors.organization ? 'border-red-500' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                      } focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300`}
                       placeholder="Enter your farm or organization name"
                     />
                     {errors.organization && <p className="mt-1 text-sm text-red-600">{errors.organization}</p>}
@@ -389,7 +489,7 @@ export default function Home() {
                       onChange={handleChange}
                       className={`w-full px-4 py-3 rounded-lg border ${
                         errors.email ? 'border-red-500' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                      } focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300`}
                       placeholder="Enter your email address"
                     />
                     {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
@@ -407,7 +507,7 @@ export default function Home() {
                       onChange={handleChange}
                       className={`w-full px-4 py-3 rounded-lg border ${
                         errors.phone ? 'border-red-500' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                      } focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300`}
                       placeholder="Enter your 10-digit phone number"
                     />
                     {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
@@ -425,7 +525,7 @@ export default function Home() {
                       onChange={handleChange}
                       className={`w-full px-4 py-3 rounded-lg border ${
                         errors.region ? 'border-red-500' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                      } focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300`}
                       placeholder="Enter your region or state"
                     />
                     {errors.region && <p className="mt-1 text-sm text-red-600">{errors.region}</p>}
@@ -442,7 +542,7 @@ export default function Home() {
                     rows={4}
                     value={formData.message}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
                     placeholder="Tell us about your farming practices or any questions you have"
                   ></textarea>
                 </div>
@@ -454,7 +554,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600 text-white font-bold py-3 px-4 rounded-full transition-all duration-300 disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600 text-white font-bold py-3 px-4 rounded-full transition-all duration-300 disabled:opacity-50 transform hover:scale-105 shadow-lg"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center justify-center">
@@ -499,13 +599,7 @@ export default function Home() {
                 <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   <span className="sr-only">Instagram</span>
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
-                  </svg>
-                </a>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  <span className="sr-only">LinkedIn</span>
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fillRule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clipRule="evenodd" />
+                    <path fillRule="evenodd" d="M12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
                   </svg>
                 </a>
               </div>
@@ -513,43 +607,48 @@ export default function Home() {
             <div>
               <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">About Us</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Contact</a></li>
+                <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors">About Us</Link></li>
+                <li><Link href="/contact" className="text-gray-300 hover:text-white transition-colors">Contact</Link></li>
+                <li><Link href="/privacy" className="text-gray-300 hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-gray-300 hover:text-white transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4">Contact Us</h4>
-              <address className="not-italic text-gray-300">
-                <p className="mb-2">AgriQuest Headquarters</p>
-                <p className="mb-2">123 Farm Innovation Drive</p>
-                <p className="mb-2">Agriculture Valley, AG 54321</p>
-                <p className="mb-2">India</p>
-                <p className="mb-2">Email: info@agriquest.in</p>
-                <p>Phone: +91 98765 43210</p>
-              </address>
+              <h4 className="text-lg font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2">
+                <li><Link href="/blog" className="text-gray-300 hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/help" className="text-gray-300 hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link href="/community" className="text-gray-300 hover:text-white transition-colors">Community</Link></li>
+                <li><Link href="/support" className="text-gray-300 hover:text-white transition-colors">Support</Link></li>
+              </ul>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4">Newsletter</h4>
-              <p className="text-gray-300 mb-4">Subscribe to our newsletter for farming tips and updates.</p>
-              <form className="flex">
-                <input 
-                  type="email" 
-                  placeholder="Your email" 
-                  className="px-4 py-2 rounded-l-lg w-full text-gray-800 focus:outline-none"
-                />
-                <button 
-                  type="submit"
-                  className="bg-gradient-to-r from-green-500 to-yellow-500 hover:from-green-600 hover:to-yellow-600 text-white px-4 py-2 rounded-r-lg transition-colors"
-                >
-                  Join
-                </button>
-              </form>
+              <h4 className="text-lg font-semibold mb-4">Contact Info</h4>
+              <ul className="space-y-2 text-gray-300">
+                <li className="flex items-start space-x-2">
+                  <svg className="h-5 w-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>123 Farm Road, Agriculture District</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <svg className="h-5 w-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <span>+1 (555) 123-4567</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <svg className="h-5 w-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span>info@agriquest.com</span>
+                </li>
+              </ul>
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} AgriQuest. All rights reserved. Empowering farmers for a sustainable future.</p>
+            <p>&copy; 2023 AgriQuest. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, Leaf, Image as ImageIcon, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, Leaf, Image, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import MissionCard from '@/components/missions/MissionCard';
 import PhotoUploader from '@/components/missions/PhotoUploader';
 import HealthScore from '@/components/missions/HealthScore';
-import Image from 'next/image';
 
 interface Mission {
   id: string;
@@ -206,17 +205,15 @@ export default function MissionDetailPage() {
           {mission.photos.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm p-4">
               <h3 className="font-semibold text-slate-800 mb-3 flex items-center space-x-2">
-                <ImageIcon className="w-5 h-5 text-green-600" />
+                <Image className="w-5 h-5 text-green-600" />
                 <span>Growth Photos</span>
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 {mission.photos.map((photo) => (
                   <div key={photo.id} className="relative">
-                    <Image 
+                    <img 
                       src={photo.url} 
                       alt="Growth stage" 
-                      width={200}
-                      height={128}
                       className="w-full h-32 object-cover rounded-lg"
                     />
                     <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-1 py-0.5 rounded">
@@ -268,7 +265,7 @@ export default function MissionDetailPage() {
             onClick={() => setShowPhotoUploader(true)}
             className="flex flex-col items-center py-2 text-slate-400"
           >
-            <ImageIcon className="w-6 h-6" />
+            <Image className="w-6 h-6" />
             <span className="text-xs">Upload</span>
           </button>
           <button 

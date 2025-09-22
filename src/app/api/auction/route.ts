@@ -4,21 +4,21 @@ import { authenticateToken } from '../shared/auth';
 
 const prisma = new PrismaClient();
 
-// Get auction data
+// Get auction data or specific auction by farmId
 export async function GET(request: NextRequest) {
   try {
     // Authenticate user
     const authResult = await authenticateToken(request);
     
-    if (authResult.error) {
+    if ('error' in authResult && authResult.error) {
       return NextResponse.json({ error: authResult.error.message }, { status: authResult.error.status });
     }
 
     const user = authResult.user;
     
-    // Get all auctions for the farmer
+    // Get the latest auction request for the farmer
     // @ts-ignore - Prisma client typing issue
-    const auctions = await prisma.auctionRequest.findMany({
+    const auctionRequest = await prisma.auctionRequest.findFirst({
       where: {
         farm: {
           farmer: {
@@ -43,10 +43,36 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    return NextResponse.json({ auctions });
+    if (!auctionRequest) {
+      return NextResponse.json({ error: 'Auction request not found' }, { status: 404 });
+    }
+    
+    // Return the auction request with proper formatting
+    return NextResponse.json({
+      auctionRequest: {
+        id: auctionRequest.id,
+        farmId: auctionRequest.farmId,
+        cropScoreId: auctionRequest.cropScoreId,
+        status: auctionRequest.status,
+        govtNotes: auctionRequest.govtNotes,
+        createdAt: auctionRequest.createdAt.toISOString(),
+        cropScore: {
+          score: auctionRequest.cropScore.score,
+          reportUrl: auctionRequest.cropScore.reportUrl
+        },
+        farm: {
+          farmer: {
+            user: {
+              firstName: auctionRequest.farm.farmer.user.firstName,
+              lastName: auctionRequest.farm.farmer.user.lastName
+            }
+          }
+        }
+      }
+    });
   } catch (error) {
-    console.error('Error fetching auctions:', error);
-    return NextResponse.json({ error: 'Failed to fetch auctions' }, { status: 500 });
+    console.error('Error fetching auction status:', error);
+    return NextResponse.json({ error: 'Failed to fetch auction status' }, { status: 500 });
   }
 }
 
@@ -56,7 +82,7 @@ export async function POST(request: NextRequest) {
     // Authenticate user
     const authResult = await authenticateToken(request);
     
-    if (authResult.error) {
+    if ('error' in authResult && authResult.error) {
       return NextResponse.json({ error: authResult.error.message }, { status: authResult.error.status });
     }
 

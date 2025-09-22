@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Sprout, 
   Camera, 
@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import Image from 'next/image';
 
 interface FarmerCrop {
   id: string;
@@ -58,8 +57,10 @@ export default function CropTrackingPage() {
   const { t } = useTranslation();
   const [crops, setCrops] = useState<FarmerCrop[]>([]);
   const [selectedCrop, setSelectedCrop] = useState<FarmerCrop | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddCrop, setShowAddCrop] = useState(false);
-  const [newCrop, setNewCrop] = useState<Omit<FarmerCrop, 'id' | 'growthRecords' | 'photos'>>({
+  const [newCrop, setNewCrop] = useState({
     cropType: '',
     variety: '',
     sowingDate: '',
@@ -71,16 +72,19 @@ export default function CropTrackingPage() {
     latitude: 0,
     longitude: 0
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
+  // Growth stages for different crops
   const growthStages = {
-    WHEAT: ['SOWING', 'SPROUTING', 'TILLERING', 'BOOTING', 'HEADING', 'FILLING', 'HARVEST'],
-    RICE: ['SOWING', 'GERMINATION', 'SEEDLING', 'TILLERING', 'PANICLE_INITIATION', 'BOOTING', 'HEADING', 'FILLING', 'HARVEST'],
+    WHEAT: ['SOWING', 'SPROUTING', 'TILLERING', 'FLOWERING', 'HARVEST'],
+    RICE: ['SOWING', 'GERMINATION', 'TILLERING', 'BOOTING', 'FLOWERING', 'HARVEST'],
     MAIZE: ['SOWING', 'SPROUTING', 'VEGETATIVE', 'TASSLING', 'SILKING', 'HARVEST']
   };
 
-  const fetchCrops = useCallback(async () => {
+  useEffect(() => {
+    fetchCrops();
+  }, []);
+
+  const fetchCrops = async () => {
     try {
       setLoading(true);
       // In a real app, this would be an API call
@@ -152,11 +156,7 @@ export default function CropTrackingPage() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
-
-  useEffect(() => {
-    fetchCrops();
-  }, [fetchCrops]);
+  };
 
   const handleAddCrop = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -619,11 +619,9 @@ export default function CropTrackingPage() {
                     <div className="grid grid-cols-2 gap-3">
                       {selectedCrop.photos.map((photo) => (
                         <div key={photo.id} className="aspect-square rounded-lg overflow-hidden">
-                          <Image 
+                          <img 
                             src={photo.url} 
                             alt={photo.caption} 
-                            width={200}
-                            height={200}
                             className="w-full h-full object-cover"
                           />
                         </div>

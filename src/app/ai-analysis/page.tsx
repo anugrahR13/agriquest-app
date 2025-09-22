@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import Image from 'next/image';
 
 interface AIAnalysisResult {
   healthScore: number;
@@ -142,11 +141,9 @@ export default function AIAnalysisPage() {
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     {previewUrl ? (
                       <div className="space-y-4">
-                        <Image 
+                        <img 
                           src={previewUrl} 
                           alt="Preview" 
-                          width={300}
-                          height={300}
                           className="max-h-64 mx-auto rounded-lg shadow-md"
                         />
                         <button

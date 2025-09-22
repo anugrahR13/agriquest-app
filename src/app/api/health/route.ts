@@ -1,11 +1,28 @@
 import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function GET() {
-  // Simple health check that doesn't require database connection
-  return NextResponse.json({ 
-    status: 'ok', 
-    message: 'AgriQuest API is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    
+    return NextResponse.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      database: 'connected',
+      message: 'AgriQuest API is running smoothly'
+    });
+  } catch (error) {
+    return NextResponse.json({ 
+      status: 'error', 
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Database connection failed'
+    }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
+  }
 }

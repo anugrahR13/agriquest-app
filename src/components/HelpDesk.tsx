@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface Ticket {
@@ -32,7 +32,11 @@ const HelpDesk: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTickets = useCallback(async () => {
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const fetchTickets = async () => {
     try {
       setLoading(true);
       // In a real app, this would be an API call
@@ -78,11 +82,7 @@ const HelpDesk: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [t]);
-
-  useEffect(() => {
-    fetchTickets();
-  }, [fetchTickets]);
+  };
 
   const createTicket = async (e: React.FormEvent) => {
     e.preventDefault();

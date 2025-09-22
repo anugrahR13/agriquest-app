@@ -1,112 +1,113 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 
 export default function TestApiPage() {
-  const [status, setStatus] = useState<string>('');
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string>('');
+  const [cropScoreData, setCropScoreData] = useState<any>(null);
+  const [auctionData, setAuctionData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const testApiConnection = async () => {
-    setStatus('Testing API connection...');
-    setError('');
-    setResult(null);
-
+  const testCropScoreApi = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await fetch('http://localhost:3006/api/health');
+      // Using mock token for testing
+      const response = await fetch('/api/crop-score', {
+        headers: {
+          'Authorization': 'Bearer mock_jwt_user_demo_12345_1234567890'
+        }
+      });
       const data = await response.json();
-      
-      if (response.ok) {
-        setResult(data);
-        setStatus('API connection successful!');
-      } else {
-        setError(`API Error: ${data.error || 'Unknown error'}`);
-        setStatus('API connection failed');
-      }
+      setCropScoreData(data);
     } catch (err) {
-      console.error('Network error:', err);
-      setError(`Network Error: ${(err as Error).message}`);
-      setStatus('API connection failed');
+      setError('Failed to fetch crop score data: ' + (err as Error).message);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const testLoginApi = async () => {
-    setStatus('Testing login API...');
-    setError('');
-    setResult(null);
-
+  const testAuctionApi = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await fetch('http://localhost:3006/api/auth/request-otp', {
-        method: 'POST',
+      // Using mock token for testing
+      const response = await fetch('/api/auction', {
         headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone: '9876543210' }),
+          'Authorization': 'Bearer mock_jwt_user_demo_12345_1234567890'
+        }
       });
-      
       const data = await response.json();
-      
-      if (response.ok) {
-        setResult(data);
-        setStatus('Login API test successful!');
-      } else {
-        setError(`Login API Error: ${data.error || 'Unknown error'}`);
-        setStatus('Login API test failed');
-      }
+      setAuctionData(data);
     } catch (err) {
-      console.error('Network error:', err);
-      setError(`Network Error: ${(err as Error).message}`);
-      setStatus('Login API test failed');
+      setError('Failed to fetch auction data: ' + (err as Error).message);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex flex-col items-center justify-center p-4">
-      <div className="bg-white rounded-xl p-8 shadow-sm max-w-md w-full">
-        <h1 className="text-2xl font-bold text-slate-800 mb-6 text-center">API Test Page</h1>
-        
-        <div className="space-y-4 mb-6">
-          <button
-            onClick={testApiConnection}
-            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-6">API Test Page</h1>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          {error}
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Crop Score API Test</h2>
+          <button 
+            onClick={testCropScoreApi}
+            disabled={loading}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
           >
-            Test API Connection
+            Test Crop Score API
           </button>
           
-          <button
-            onClick={testLoginApi}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Test Login API
-          </button>
+          {cropScoreData && (
+            <div className="mt-4">
+              <h3 className="font-medium">Response:</h3>
+              <pre className="bg-gray-100 p-4 rounded mt-2 text-sm overflow-auto">
+                {JSON.stringify(cropScoreData, null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
-
-        {status && (
-          <div className="mb-4 p-4 rounded-lg bg-gray-100">
-            <p className="font-medium text-slate-800">{status}</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-4 p-4 rounded-lg bg-red-100 border border-red-200">
-            <p className="text-red-700">{error}</p>
-          </div>
-        )}
-
-        {result && (
-          <div className="mb-4 p-4 rounded-lg bg-green-100 border border-green-200">
-            <pre className="text-green-800 text-sm overflow-auto">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          </div>
-        )}
-
-        <div className="mt-6 text-center">
-          <a href="/login-options" className="text-green-600 hover:underline">
-            ← Back to Login Options
-          </a>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Auction API Test</h2>
+          <button 
+            onClick={testAuctionApi}
+            disabled={loading}
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
+          >
+            Test Auction API
+          </button>
+          
+          {auctionData && (
+            <div className="mt-4">
+              <h3 className="font-medium">Response:</h3>
+              <pre className="bg-gray-100 p-4 rounded mt-2 text-sm overflow-auto">
+                {JSON.stringify(auctionData, null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
       </div>
+      
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-center">Loading...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
