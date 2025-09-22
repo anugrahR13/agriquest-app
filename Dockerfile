@@ -27,8 +27,7 @@ RUN npm run build
 RUN npm prune --production
 
 # Make startup script executable
-COPY docker-start.sh .
-RUN chmod +x docker-start.sh
+RUN chmod +x ./docker-start.sh
 
 # Expose port
 EXPOSE 3000
