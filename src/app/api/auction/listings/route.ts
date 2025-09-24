@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
     const user = authResult.user;
     
     // Get all active auctions (approved and open for bidding)
-    // @ts-ignore - Prisma client typing issue
     const auctions = await prisma.auction.findMany({
       where: {
         status: 'ACTIVE',
@@ -26,16 +25,7 @@ export async function GET(request: NextRequest) {
         }
       },
       include: {
-        farm: {
-          include: {
-            farmer: {
-              include: {
-                user: true
-              }
-            }
-          }
-        },
-        cropScoreRecord: true
+        farm: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -52,7 +42,7 @@ export async function GET(request: NextRequest) {
       currentBid: auction.currentBid,
       startDate: auction.startDate.toISOString(),
       endDate: auction.endDate.toISOString(),
-      farmerName: auction.farmerName || `${auction.farm.farmer.user.firstName} ${auction.farm.farmer.user.lastName}`,
+      farmerName: auction.farmerName || 'Unknown Farmer',
       farmLocation: auction.farmLocation || auction.farm.location,
       status: auction.status
     }));

@@ -757,8 +757,8 @@ model Auction {
   updatedAt       DateTime    @updatedAt
 
   // Relations
-  farm            FarmProfile @relation(fields: [farmId], references: [id])
-  cropScoreRecord CropScore   @relation(fields: [cropScoreId], references: [id])
+  farm            FarmProfile @relation(fields: [farmId], references: [id], map: "auction_farm_fkey")
+  cropScoreRecord CropScore   @relation(fields: [cropScoreId], references: [id], map: "auction_crop_score_fkey")
   bids            Bid[]
 
   @@map("auctions")
@@ -873,6 +873,6 @@ model AuctionRequest {
   status      String   @default("PENDING")
   govtNotes   String?
   createdAt   DateTime @default(now())
-  farm        FarmProfile @relation(fields: [farmId], references: [id])
-  cropScore   CropScore @relation(fields: [cropScoreId], references: [id])
+  farm        FarmProfile @relation(fields: [farmId], references: [id], map: "auction_request_farm_fkey")
+  cropScore   CropScore @relation(fields: [cropScoreId], references: [id], map: "auction_request_crop_score_fkey")
 }

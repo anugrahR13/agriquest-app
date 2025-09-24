@@ -17,26 +17,27 @@ export async function GET(request: NextRequest) {
     const user = authResult.user;
     
     // Get the latest auction request for the farmer
-    // @ts-ignore - Prisma client typing issue
+    const farms = await prisma.farmProfile.findMany({
+      where: {
+        userId: user.id
+      }
+    });
+    
+    if (farms.length === 0) {
+      return NextResponse.json({ error: 'No farms found for user' }, { status: 404 });
+    }
+    
+    const farmIds = farms.map(farm => farm.id);
+    
     const auctionRequest = await prisma.auctionRequest.findFirst({
       where: {
-        farm: {
-          farmer: {
-            userId: user.id
-          }
+        farmId: {
+          in: farmIds
         }
       },
       include: {
         cropScore: true,
-        farm: {
-          include: {
-            farmer: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
+        farm: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -61,12 +62,12 @@ export async function GET(request: NextRequest) {
           reportUrl: auctionRequest.cropScore.reportUrl
         },
         farm: {
-          farmer: {
-            user: {
-              firstName: auctionRequest.farm.farmer.user.firstName,
-              lastName: auctionRequest.farm.farmer.user.lastName
-            }
-          }
+          id: auctionRequest.farm.id,
+          cropType: auctionRequest.farm.cropType,
+          seedVariety: auctionRequest.farm.seedVariety,
+          sowingDate: auctionRequest.farm.sowingDate.toISOString(),
+          size: auctionRequest.farm.size,
+          location: auctionRequest.farm.location
         }
       }
     });
@@ -96,13 +97,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Check if farm belongs to user
-    // @ts-ignore - Prisma client typing issue
     const farm = await prisma.farmProfile.findUnique({
       where: {
         id: farmId,
-        farmer: {
-          userId: user.id
-        }
+        userId: user.id
       }
     });
     

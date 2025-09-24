@@ -50,7 +50,8 @@
     "profile": "Profile",
     "settings": "Settings",
     "help": "Help",
-    "about": "About"
+    "about": "About",
+    "crops": "Crop Tracking"
   },
   "auth": {
     "title": "Welcome to AgriQuest",
@@ -94,11 +95,13 @@
       "panchayat": "Panchayat/Block",
       "farmName": "Farm Name",
       "farmSize": "Farm Size (in acres)",
+      "location": "Location",
       "enterState": "e.g., Punjab, Uttar Pradesh",
       "enterVillage": "Enter your village name",
       "enterPanchayat": "Enter panchayat name",
       "enterFarmName": "e.g., Kumar Organic Farm",
-      "enterFarmSize": "e.g., 5.5"
+      "enterFarmSize": "e.g., 5.5",
+      "enterLocation": "Enter farm location"
     },
     "cropSelection": {
       "title": "Crops You Grow",
@@ -159,7 +162,10 @@
       "Community knowledge sharing",
       "Reward redemption system"
     ],
-    "level": "Level"
+    "level": "Level",
+    "soilPH": "Soil pH",
+    "soilTexture": "Soil Texture",
+    "soilFertility": "Soil Fertility"
   },
   "missions": {
     "title": "Farming Missions",
@@ -360,5 +366,55 @@
     "assignedTo": "Assigned to",
     "description": "Get expert guidance from agricultural mentors. Create a ticket to ask questions about farming practices, pest control, irrigation, or any other agricultural challenges.",
     "subtitle": "Get expert farming guidance"
+  },
+  "voiceAssistant": {
+    "voice_assistant": "Agricultural Voice Assistant",
+    "select_language": "Select Language",
+    "select_feature": "Select Feature Category",
+    "general": "General Assistance",
+    "weather": "Weather Forecast",
+    "crop": "Crop Management",
+    "pest": "Pest Control",
+    "schedule": "Farming Schedule",
+    "soil": "Soil Health",
+    "irrigation": "Irrigation Guide",
+    "market": "Market Insights",
+    "click_mic_to_speak": "Click microphone to speak",
+    "listening": "Listening...",
+    "type_your_question": "Type your agricultural question",
+    "conversation": "Conversation History",
+    "you": "You",
+    "assistant": "Agricultural Assistant",
+    "no_conversation_yet": "No conversation history yet",
+    "voice_bot_error": "Sorry, I encountered an error processing your request. Please try again.",
+    "how_to_use": "How to Use the Voice Assistant",
+    "voice_instruction_1": "Select your preferred language for communication",
+    "voice_instruction_2": "Choose a feature category for specific agricultural help",
+    "voice_instruction_3": "Click the microphone and speak your farming question clearly",
+    "voice_instruction_4": "Listen to the response or read it in the conversation panel below",
+    "supported_features": "Supported Agricultural Features",
+    "feature_general_desc": "General farming assistance and agricultural help",
+    "feature_weather_desc": "Weather updates and farming recommendations",
+    "feature_crop_desc": "Crop management and cultivation advice",
+    "feature_pest_desc": "Pest identification and control methods",
+    "feature_schedule_desc": "Planting, harvesting, and fertilizing schedules",
+    "feature_soil_desc": "Soil health, pH balance, and fertility management",
+    "feature_irrigation_desc": "Irrigation techniques and water management",
+    "feature_market_desc": "Market prices, selling, and buying advice",
+    "supported_languages": "Supported Languages",
+    "language_english": "English",
+    "language_hindi": "Hindi",
+    "language_marathi": "Marathi",
+    "language_tamil": "Tamil",
+    "language_kannada": "Kannada",
+    "language_gujarati": "Gujarati",
+    "more_languages_coming_soon": "More languages coming soon!",
+    "privacy_notice": "Privacy Notice",
+    "voice_data_privacy": "Your voice data is processed locally and not stored on any servers. We prioritize your privacy and security.",
+    "voice_settings": "Voice Settings",
+    "voice_preferences": "Assistant Preferences",
+    "speed": "Speech Speed",
+    "save_conversation": "Save Conversation",
+    "clear_conversation": "Clear Conversation"
   }
 }

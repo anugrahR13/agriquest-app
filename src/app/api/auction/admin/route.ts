@@ -19,16 +19,7 @@ export async function GET(request: NextRequest) {
     // Get all auctions with farmer info
     const auctions = await prisma.auction.findMany({
       include: {
-        farm: {
-          include: {
-            farmer: {
-              include: {
-                user: true
-              }
-            }
-          }
-        },
-        cropScoreRecord: true
+        farm: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -45,10 +36,10 @@ export async function GET(request: NextRequest) {
       currentBid: auction.currentBid,
       startDate: auction.startDate.toISOString(),
       endDate: auction.endDate.toISOString(),
-      farmerName: auction.farmerName || `${auction.farm.farmer.user.firstName} ${auction.farm.farmer.user.lastName}`,
+      farmerName: auction.farmerName || 'Unknown Farmer',
       farmLocation: auction.farmLocation || auction.farm.location,
       status: auction.status,
-      cropScore: auction.cropScore,
+      cropScore: auction.cropScore || 0,
       reportUrl: auction.reportUrl,
       governmentNotes: auction.govtNotes
     }));
@@ -91,6 +82,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
+    // Verify farm exists
+    const farm = await prisma.farmProfile.findUnique({
+      where: { id: farmId }
+    });
+    
+    if (!farm) {
+      return NextResponse.json({ error: 'Farm not found' }, { status: 404 });
+    }
+    
     // Create the auction
     const auction = await prisma.auction.create({
       data: {
@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
         startingPrice: parseFloat(startingPrice),
         currentBid: parseFloat(startingPrice),
         endDate: new Date(endDate),
-        farmerName,
-        farmLocation,
+        farmerName: farmerName || 'Unknown Farmer',
+        farmLocation: farmLocation || farm.location,
         status: 'ACTIVE',
         cropScore: parseFloat(cropScore) || 0,
         govtNotes: governmentNotes

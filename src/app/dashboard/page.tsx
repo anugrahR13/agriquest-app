@@ -20,7 +20,8 @@ import {
   Sprout,
   Zap,
   FileText,
-  Gavel
+  Gavel,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -53,6 +54,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is logged in
@@ -73,8 +75,9 @@ export default function DashboardPage() {
 
   const fetchUserStats = async (token: string) => {
     try {
+      setError(null);
       // Use relative URL instead of absolute URL to avoid CORS issues
-      const response = await fetch(`/api/users/stats`, {
+      const response = await fetch(`/api/users?action=stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -88,12 +91,16 @@ export default function DashboardPage() {
           setStats(data);
         } else {
           console.error('Response is not JSON:', await response.text());
+          setError('Invalid response format from server');
         }
       } else {
-        console.error('Failed to fetch stats:', response.status, await response.text());
+        const errorText = await response.text();
+        console.error('Failed to fetch stats:', response.status, errorText);
+        setError(`Failed to load stats: ${response.status} ${errorText}`);
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+      setError('Network error: Unable to fetch stats. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -143,6 +150,31 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
+
+      {/* Error Message */}
+      {error && (
+        <div className="max-w-md mx-auto px-4 py-3">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="text-red-800 font-medium">Error Loading Data</p>
+              <p className="text-red-700 text-sm mt-1">{error}</p>
+              <button
+                onClick={() => {
+                  const token = localStorage.getItem('token');
+                  if (token) {
+                    setLoading(true);
+                    fetchUserStats(token);
+                  }
+                }}
+                className="mt-2 text-red-700 text-sm font-medium hover:text-red-900 underline"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="px-4 py-6">
@@ -310,10 +342,25 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium text-teal-800">Crop Reports</span>
               </Link>
 
-              <Link href="/auction/apply" className="flex flex-col items-center space-y-2 p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors hover-lift delay-100">
+              <Link href="/auction/dashboard" className="flex flex-col items-center space-y-2 p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors hover-lift delay-100">
                 <Gavel className="w-8 h-8 text-amber-600 scale-in delay-100" />
-                <span className="text-sm font-medium text-amber-800">Auction Apply</span>
+                <span className="text-sm font-medium text-amber-800">Auction Center</span>
               </Link>
+            </div>
+          </div>
+
+          {/* Auction Highlights */}
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-4 text-white fade-in-up delay-400">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-bold text-xl mb-2">🌾 Government Auction Portal</h3>
+                <p className="text-sm opacity-90 mb-3">Sell your crops at fair market prices with government-backed auctions</p>
+                <Link href="/auction/dashboard" className="bg-white text-amber-600 font-bold py-2 px-4 rounded-lg inline-flex items-center">
+                  <Gavel className="w-4 h-4 mr-2" />
+                  Access Auction Center
+                </Link>
+              </div>
+              <Gavel className="w-10 h-10 opacity-80" />
             </div>
           </div>
 
@@ -367,7 +414,7 @@ export default function DashboardPage() {
           </Link>
           <Link href="/crop-tracking" className="flex flex-col items-center py-2 text-slate-400 hover-scale">
             <Sprout className="w-6 h-6" />
-            <span className="text-xs">Crops</span>
+            <span className="text-xs">Crop Tracking</span>
           </Link>
           <Link href="/community" className="flex flex-col items-center py-2 text-slate-400 hover-scale">
             <Users className="w-6 h-6" />

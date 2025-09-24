@@ -18,7 +18,9 @@ import {
   AlertCircle,
   Users,
   Trophy,
-  History
+  History,
+  Plus,
+  TrendingUp
 } from 'lucide-react';
 
 interface AuctionDetail {
@@ -53,15 +55,30 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bidAmount, setBidAmount] = useState('');
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    
+    if (token && userData) {
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+    }
+    
     fetchAuctionDetails();
   }, [params.id]);
 
   const fetchAuctionDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/auction/${params.id}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/auction/${params.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch auction details');
@@ -87,10 +104,12 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
     }
     
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`/api/auction/${params.id}/bid`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ amount: parseFloat(bidAmount) }),
       });
@@ -167,7 +186,7 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4">
         <div className="max-w-md mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
           <strong className="font-bold">Error: </strong>
-          <span className="block sm:inline">{error}</span>
+          <span className="block sm:inline break-words">{error}</span>
         </div>
       </div>
     );
@@ -186,6 +205,8 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
 
   const isAuctionActive = auction.status === 'ACTIVE' && new Date(auction.endDate) > new Date();
   const winningBid = bids.find(bid => bid.isWinner) || (bids.length > 0 ? bids[0] : null);
+  const isGovernmentUser = user?.role === 'GOVERNMENT';
+  const isFarmerUser = user?.role === 'FARMER';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 pb-20">
@@ -193,12 +214,12 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
       <header className="bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
-            <Link href="/auction/listings" className="touch-target">
+            <Link href="/auction/dashboard" className="touch-target">
               <ArrowLeft className="w-6 h-6" />
             </Link>
-            <div>
-              <h1 className="text-xl font-bold">{t('auction_details')}</h1>
-              <p className="text-sm opacity-90">{auction.cropType} - {auction.variety}</p>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold truncate">{t('auction_details')}</h1>
+              <p className="text-sm opacity-90 break-words truncate">{auction?.cropType} - {auction?.variety}</p>
             </div>
           </div>
           <Gavel className="w-6 h-6" />
@@ -210,11 +231,11 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
           {/* Auction Details Card */}
           <div className="glass-card rounded-xl p-6 shadow-sm">
             <div className="flex justify-between items-start mb-4">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800">
+              <div className="min-w-0">
+                <h2 className="text-2xl font-bold text-slate-800 truncate">
                   {auction.cropType} ({auction.variety})
                 </h2>
-                <p className="text-slate-600">{auction.farmerName}</p>
+                <p className="text-slate-600 break-words">{auction.farmerName}</p>
               </div>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(auction.status)}`}>
                 {auction.status}
@@ -223,45 +244,45 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
             
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-green-50 p-3 rounded-lg">
-                <p className="text-sm text-slate-600">{t('quantity')}</p>
-                <p className="font-medium">{auction.quantity} acres</p>
+                <p className="text-sm text-slate-600 truncate">{t('quantity')}</p>
+                <p className="font-medium truncate">{auction.quantity} acres</p>
               </div>
               <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm text-slate-600">{t('current_bid')}</p>
-                <p className="font-medium">₹{auction.currentBid.toLocaleString()}</p>
+                <p className="text-sm text-slate-600 truncate">{t('current_bid')}</p>
+                <p className="font-medium truncate">₹{auction.currentBid.toLocaleString()}</p>
               </div>
               <div className="bg-amber-50 p-3 rounded-lg">
-                <p className="text-sm text-slate-600">{t('starting_price')}</p>
-                <p className="font-medium">₹{auction.startingPrice.toLocaleString()}</p>
+                <p className="text-sm text-slate-600 truncate">{t('starting_price')}</p>
+                <p className="font-medium truncate">₹{auction.startingPrice.toLocaleString()}</p>
               </div>
               <div className="bg-purple-50 p-3 rounded-lg">
-                <p className="text-sm text-slate-600">{t('time_remaining')}</p>
-                <p className="font-medium">{getTimeRemaining(auction.endDate)}</p>
+                <p className="text-sm text-slate-600 truncate">{t('time_remaining')}</p>
+                <p className="font-medium truncate">{getTimeRemaining(auction.endDate)}</p>
               </div>
             </div>
             
             <div className="space-y-4 mb-6">
               <div className="flex items-center space-x-2">
-                <MapPin className="w-5 h-5 text-green-600" />
-                <span>{auction.farmLocation}</span>
+                <MapPin className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <span className="break-words">{auction.farmLocation}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Calendar className="w-5 h-5 text-blue-600" />
-                <span>{t('ends_on')} {formatDate(auction.endDate)} at {formatTime(auction.endDate)}</span>
+                <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <span className="break-words">{t('ends_on')} {formatDate(auction.endDate)} at {formatTime(auction.endDate)}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Leaf className="w-5 h-5 text-emerald-600" />
-                <span>{t('crop_health_score')}: {auction.cropScore}/10</span>
+                <Leaf className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                <span className="truncate">Crop Health Score: {auction.cropScore}/10</span>
               </div>
             </div>
             
             {auction.governmentNotes && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <h3 className="font-medium text-blue-800 mb-2 flex items-center">
-                  <CheckCircle className="w-5 h-5 mr-2" />
+                  <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
                   {t('government_notes')}
                 </h3>
-                <p className="text-blue-700">{auction.governmentNotes}</p>
+                <p className="text-blue-700 break-words">{auction.governmentNotes}</p>
               </div>
             )}
             
@@ -269,10 +290,10 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
             {winningBid && (
               <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <h3 className="font-medium text-yellow-800 mb-2 flex items-center">
-                  <Trophy className="w-5 h-5 mr-2" />
+                  <Trophy className="w-5 h-5 mr-2 flex-shrink-0" />
                   {winningBid.isWinner ? 'Winning Bid' : 'Leading Bid'}
                 </h3>
-                <p className="text-yellow-700">
+                <p className="text-yellow-700 break-words">
                   <span className="font-bold">₹{winningBid.amount.toLocaleString()}</span> by {winningBid.bidderName}
                 </p>
               </div>
@@ -280,7 +301,7 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
           </div>
           
           {/* Place Bid Section */}
-          {isAuctionActive && (
+          {isAuctionActive && !isGovernmentUser && (
             <div className="glass-card rounded-xl p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-slate-800 mb-4">{t('place_bid')}</h3>
               
@@ -304,7 +325,7 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
                       required
                     />
                   </div>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-500 break-words">
                     {t('minimum_bid')}: ₹{auction.currentBid + 1}
                   </p>
                 </div>
@@ -323,7 +344,7 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
           {bids.length > 0 && (
             <div className="glass-card rounded-xl p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
-                <History className="w-5 h-5 mr-2" />
+                <History className="w-5 h-5 mr-2 flex-shrink-0" />
                 {t('bidding_history')}
               </h3>
               
@@ -338,14 +359,14 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
                     }`}
                   >
                     <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-slate-800">{bid.bidderName}</p>
-                        <p className="text-sm text-slate-600">
+                      <div className="min-w-0">
+                        <p className="font-medium text-slate-800 break-words">{bid.bidderName}</p>
+                        <p className="text-sm text-slate-600 break-words">
                           {formatDate(bid.timestamp)} at {formatTime(bid.timestamp)}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-slate-800">₹{bid.amount.toLocaleString()}</p>
+                      <div className="text-right min-w-0">
+                        <p className="font-bold text-slate-800 truncate">₹{bid.amount.toLocaleString()}</p>
                         {bid.isWinner && (
                           <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
                             Winner
@@ -370,27 +391,48 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
                 rel="noopener noreferrer"
                 className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:bg-slate-50"
               >
-                <div className="flex items-center space-x-3">
-                  <FileText className="w-5 h-5 text-green-600" />
-                  <span className="font-medium">{t('crop_analysis_report')}</span>
+                <div className="flex items-center space-x-3 min-w-0">
+                  <FileText className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <span className="font-medium break-words truncate">{t('crop_analysis_report')}</span>
                 </div>
-                <span className="text-sm text-slate-500">{t('pdf')}</span>
+                <span className="text-sm text-slate-500 whitespace-nowrap">{t('pdf')}</span>
               </a>
               
               <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
-                <div className="flex items-center space-x-3">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium">{t('farm_certificate')}</span>
+                <div className="flex items-center space-x-3 min-w-0">
+                  <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                  <span className="font-medium break-words truncate">{t('farm_certificate')}</span>
                 </div>
-                <span className="text-sm text-slate-500">{t('pdf')}</span>
+                <span className="text-sm text-slate-500 whitespace-nowrap">{t('pdf')}</span>
               </div>
               
               <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
-                <div className="flex items-center space-x-3">
-                  <FileText className="w-5 h-5 text-amber-600" />
-                  <span className="font-medium">{t('quality_certificate')}</span>
+                <div className="flex items-center space-x-3 min-w-0">
+                  <FileText className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                  <span className="font-medium break-words truncate">{t('quality_certificate')}</span>
                 </div>
-                <span className="text-sm text-slate-500">{t('pdf')}</span>
+                <span className="text-sm text-slate-500 whitespace-nowrap">{t('pdf')}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Auction Insights */}
+          <div className="glass-card rounded-xl p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-green-600 flex-shrink-0" />
+              Auction Insights
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-green-50 p-3 rounded-lg">
+                <p className="text-sm text-slate-600 truncate">Total Bids</p>
+                <p className="text-xl font-bold text-slate-800 truncate">{bids.length}</p>
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-slate-600 truncate">Bid Spread</p>
+                <p className="text-xl font-bold text-slate-800 break-words">
+                  ₹{auction.startingPrice.toLocaleString()} - ₹{Math.max(auction.currentBid, auction.startingPrice).toLocaleString()}
+                </p>
               </div>
             </div>
           </div>
@@ -408,7 +450,7 @@ export default function AuctionDetailsPage({ params }: { params: { id: string } 
             <CheckCircle className="w-6 h-6" />
             <span className="text-xs">Missions</span>
           </Link>
-          <Link href="/auction/listings" className="flex flex-col items-center py-2 text-green-600 touch-target">
+          <Link href="/auction/dashboard" className="flex flex-col items-center py-2 text-green-600 touch-target">
             <Gavel className="w-6 h-6" />
             <span className="text-xs font-medium">Auctions</span>
           </Link>

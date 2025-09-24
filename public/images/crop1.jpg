@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f0f8e0"/>
+  <circle cx="100" cy="100" r="30" fill="#3a7d34"/>
+  <circle cx="150" cy="80" r="25" fill="#3a7d34"/>
+  <circle cx="200" cy="100" r="35" fill="#3a7d34"/>
+  <circle cx="250" cy="90" r="28" fill="#3a7d34"/>
+  <circle cx="300" cy="110" r="32" fill="#3a7d34"/>
+  <rect x="80" y="130" width="240" height="20" fill="#8b4513"/>
+  <text x="200" y="250" font-family="Arial" font-size="20" fill="#333" text-anchor="middle">Crop Stage 1</text>
+</svg>

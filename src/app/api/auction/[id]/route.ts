@@ -76,15 +76,7 @@ export async function GET(
         },
         include: {
           cropScore: true,
-          farm: {
-            include: {
-              farmer: {
-                include: {
-                  user: true
-                }
-              }
-            }
-          }
+          farm: true
         },
         orderBy: {
           createdAt: 'desc'
@@ -109,12 +101,12 @@ export async function GET(
             reportUrl: auctionRequest.cropScore.reportUrl
           },
           farm: {
-            farmer: {
-              user: {
-                firstName: auctionRequest.farm.farmer.user.firstName,
-                lastName: auctionRequest.farm.farmer.user.lastName
-              }
-            }
+            id: auctionRequest.farm.id,
+            cropType: auctionRequest.farm.cropType,
+            seedVariety: auctionRequest.farm.seedVariety,
+            sowingDate: auctionRequest.farm.sowingDate.toISOString(),
+            size: auctionRequest.farm.size,
+            location: auctionRequest.farm.location
           }
         }
       });

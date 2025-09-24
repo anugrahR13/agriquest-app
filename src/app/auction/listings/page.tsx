@@ -14,7 +14,12 @@ import {
   Leaf,
   Users,
   Plus,
-  CheckCircle
+  CheckCircle,
+  Filter,
+  Search,
+  BarChart3,
+  TrendingUp,
+  Award
 } from 'lucide-react';
 
 interface AuctionListing {
@@ -37,6 +42,9 @@ export default function AuctionListingsPage() {
   const [auctions, setAuctions] = useState<AuctionListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('endDate');
 
   useEffect(() => {
     fetchAuctionListings();
@@ -45,7 +53,12 @@ export default function AuctionListingsPage() {
   const fetchAuctionListings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/auction/listings');
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/auction/listings', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch auction listings');
@@ -97,6 +110,28 @@ export default function AuctionListingsPage() {
     }
   };
 
+  // Filter and sort auctions
+  const filteredAndSortedAuctions = auctions
+    .filter(auction => {
+      const matchesSearch = auction.cropType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           auction.farmerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           auction.variety.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesFilter = filterStatus === 'all' || auction.status === filterStatus;
+      
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'endDate') {
+        return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
+      } else if (sortBy === 'currentBid') {
+        return b.currentBid - a.currentBid;
+      } else if (sortBy === 'cropScore') {
+        return b.cropScore - a.cropScore;
+      }
+      return 0;
+    });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
@@ -110,7 +145,7 @@ export default function AuctionListingsPage() {
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4">
         <div className="max-w-md mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
           <strong className="font-bold">Error: </strong>
-          <span className="block sm:inline">{error}</span>
+          <span className="block sm:inline break-words">{error}</span>
         </div>
       </div>
     );
@@ -125,9 +160,9 @@ export default function AuctionListingsPage() {
             <Link href="/dashboard" className="touch-target">
               <ArrowLeft className="w-6 h-6" />
             </Link>
-            <div>
-              <h1 className="text-xl font-bold">{t('government_auction_portal')}</h1>
-              <p className="text-sm opacity-90">{t('browse_active_auctions')}</p>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold truncate">{t('government_auction_portal')}</h1>
+              <p className="text-sm opacity-90 truncate">{t('browse_active_auctions')}</p>
             </div>
           </div>
           <Gavel className="w-6 h-6" />
@@ -135,98 +170,157 @@ export default function AuctionListingsPage() {
       </header>
 
       <main className="p-4">
-        <div className="max-w-md mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           {/* Stats Card */}
           <div className="glass-card rounded-xl p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800">{t('active_auctions')}</h2>
-                <p className="text-slate-600">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+              <div className="min-w-0">
+                <h2 className="text-2xl font-bold text-slate-800 truncate">{t('active_auctions')}</h2>
+                <p className="text-slate-600 break-words">
                   {t('browse_government_auctions')}
                 </p>
               </div>
-              <Link 
-                href="/auction/apply"
-                className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full"
-              >
-                <Plus className="w-6 h-6" />
-              </Link>
+              <div className="mt-4 md:mt-0 flex space-x-3">
+                <Link 
+                  href="/auction/apply"
+                  className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full"
+                >
+                  <Plus className="w-6 h-6" />
+                </Link>
+                <Link 
+                  href="/auction/dashboard"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+                >
+                  <BarChart3 className="w-5 h-5 mr-1 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Dashboard</span>
+                </Link>
+              </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-50 p-3 rounded-lg text-center">
-                <p className="text-2xl font-bold text-green-600">{auctions.length}</p>
-                <p className="text-xs text-slate-600">{t('total')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="bg-green-50 p-4 rounded-lg text-center">
+                <p className="text-2xl font-bold text-green-600 truncate">{auctions.length}</p>
+                <p className="text-xs text-slate-600 truncate">{t('total')}</p>
               </div>
-              <div className="bg-blue-50 p-3 rounded-lg text-center">
-                <p className="text-2xl font-bold text-blue-600">
+              <div className="bg-blue-50 p-4 rounded-lg text-center">
+                <p className="text-2xl font-bold text-blue-600 truncate">
                   {auctions.filter(a => new Date(a.endDate) > new Date()).length}
                 </p>
-                <p className="text-xs text-slate-600">{t('active')}</p>
+                <p className="text-xs text-slate-600 truncate">{t('active')}</p>
               </div>
-              <div className="bg-amber-50 p-3 rounded-lg text-center">
-                <p className="text-2xl font-bold text-amber-600">
+              <div className="bg-amber-50 p-4 rounded-lg text-center">
+                <p className="text-2xl font-bold text-amber-600 truncate">
                   {auctions.filter(a => a.currentBid > a.startingPrice).length}
                 </p>
-                <p className="text-xs text-slate-600">{t('bids')}</p>
+                <p className="text-xs text-slate-600 truncate">{t('bids')}</p>
               </div>
             </div>
             
-            {auctions.length > 0 ? (
+            {/* Filters and Search */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 mb-6">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search auctions..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-green-500 focus:border-green-500 w-full md:w-64"
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Filter className="text-slate-400 w-4 h-4" />
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="ENDED">Ended</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-slate-600 whitespace-nowrap">Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="endDate">Ending Soon</option>
+                  <option value="currentBid">Highest Bid</option>
+                  <option value="cropScore">Crop Score</option>
+                </select>
+              </div>
+            </div>
+            
+            {filteredAndSortedAuctions.length > 0 ? (
               <div className="space-y-4">
-                {auctions.map((auction) => (
+                {filteredAndSortedAuctions.map((auction) => (
                   <div 
                     key={auction.id}
-                    className="glass-card p-4 rounded-lg hover:shadow-md transition-all"
+                    className="glass-card p-4 rounded-lg hover:shadow-md transition-all border border-slate-200"
                   >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="text-lg font-semibold text-slate-800">
-                          {auction.cropType} ({auction.variety})
-                        </h3>
-                        <p className="text-sm text-slate-600">{auction.farmerName}</p>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+                          <div className="min-w-0">
+                            <h3 className="text-lg font-semibold text-slate-800 truncate">
+                              {auction.cropType} ({auction.variety})
+                            </h3>
+                            <p className="text-sm text-slate-600 break-words">{auction.farmerName}</p>
+                          </div>
+                          <div className="flex items-center space-x-3 mt-2 sm:mt-0">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(auction.status)}`}>
+                              {auction.status}
+                            </span>
+                            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                              Score: {auction.cropScore}/10
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                          <div className="flex items-center space-x-2">
+                            <Scale className="w-4 h-4 text-green-600 flex-shrink-0" />
+                            <span className="text-sm">
+                              <span className="font-medium">{auction.quantity}</span> acres
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <IndianRupee className="w-4 h-4 text-green-600 flex-shrink-0" />
+                            <span className="text-sm">
+                              <span className="font-medium">₹{auction.currentBid.toLocaleString()}</span> bid
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                            <span className="text-sm">
+                              {getTimeRemaining(auction.endDate)}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-sm text-slate-600">
+                            <MapPin className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate break-words">{auction.farmLocation}</span>
+                          </div>
+                        </div>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(auction.status)}`}>
-                        {auction.status}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div className="flex items-center space-x-2">
-                        <Scale className="w-4 h-4 text-green-600" />
-                        <span className="text-sm">
-                          <span className="font-medium">{auction.quantity}</span> acres
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <IndianRupee className="w-4 h-4 text-green-600" />
-                        <span className="text-sm">
-                          <span className="font-medium">₹{auction.currentBid.toLocaleString()}</span> bid
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm">
-                          {getTimeRemaining(auction.endDate)}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm text-slate-600">
-                        <MapPin className="w-4 h-4" />
-                        <span className="truncate">{auction.farmLocation}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-slate-600">
-                        Ends: {formatDate(auction.endDate)}
-                      </div>
-                      <div className="flex space-x-2">
+                      
+                      <div className="flex flex-col items-end mt-4 md:mt-0">
                         <Link 
                           href={`/auction/details/${auction.id}`}
-                          className="text-green-600 font-medium text-sm touch-target"
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
                         >
                           {t('view_details')}
                         </Link>
+                        <div className="text-xs text-slate-500 mt-2 break-words">
+                          Ends: {formatDate(auction.endDate)}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -235,7 +329,11 @@ export default function AuctionListingsPage() {
             ) : (
               <div className="text-center py-12">
                 <Gavel className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">{t('no_active_auctions')}</p>
+                <p className="text-gray-500 mb-4 break-words">
+                  {searchTerm || filterStatus !== 'all' 
+                    ? 'No auctions match your search criteria' 
+                    : t('no_active_auctions')}
+                </p>
                 <Link 
                   href="/auction/apply"
                   className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg touch-target"
@@ -250,29 +348,88 @@ export default function AuctionListingsPage() {
           <div className="glass-card rounded-xl p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-800 mb-4">How Government Auctions Work</h3>
             
-            <div className="space-y-4 text-sm text-slate-600">
-              <p>
-                Government auctions provide farmers with a transparent platform to sell their crops at fair market prices. 
-                Our system ensures that both farmers and buyers get the best value through competitive bidding.
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-slate-800">Benefits for Farmers</h4>
+                <div className="space-y-3 text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 break-words">
+                    Government auctions provide farmers with a transparent platform to sell their crops at fair market prices. 
+                    Our system ensures that both farmers and buyers get the best value through competitive bidding.
+                  </p>
+                  
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <ul className="list-disc list-inside space-y-1">
+                      <li className="break-words">Guaranteed fair market price for your crops</li>
+                      <li className="break-words">Transparent bidding process</li>
+                      <li className="break-words">Government-backed transactions</li>
+                      <li className="break-words">AI-powered crop quality assessment</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
               
-              <div className="bg-green-50 p-3 rounded-lg">
-                <h4 className="font-medium text-slate-800 mb-1">Benefits for Farmers</h4>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Guaranteed fair market price for your crops</li>
-                  <li>Transparent bidding process</li>
-                  <li>Government-backed transactions</li>
-                  <li>AI-powered crop quality assessment</li>
+              <div className="space-y-4">
+                <h4 className="font-semibold text-slate-800">Benefits for Buyers</h4>
+                <div className="space-y-3 text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 break-words">
+                    Buyers can access high-quality crops at competitive prices through our transparent auction system.
+                    All crops come with verified quality reports and government backing.
+                  </p>
+                  
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <ul className="list-disc list-inside space-y-1">
+                      <li className="break-words">Access to high-quality crops</li>
+                      <li className="break-words">Competitive pricing</li>
+                      <li className="break-words">Verified farmer credentials</li>
+                      <li className="break-words">Detailed crop reports and analytics</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Quick Stats */}
+          <div className="glass-card rounded-xl p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-green-600 flex-shrink-0" />
+              Auction Insights
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Award className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                  <h4 className="font-medium text-slate-800 truncate">Top Crops</h4>
+                </div>
+                <ul className="text-sm text-slate-600 space-y-1">
+                  <li className="break-words">• Wheat - 24 auctions</li>
+                  <li className="break-words">• Rice - 18 auctions</li>
+                  <li className="break-words">• Corn - 15 auctions</li>
                 </ul>
               </div>
               
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <h4 className="font-medium text-slate-800 mb-1">Benefits for Buyers</h4>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Access to high-quality crops</li>
-                  <li>Competitive pricing</li>
-                  <li>Verified farmer credentials</li>
-                  <li>Detailed crop reports and analytics</li>
+              <div className="bg-amber-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <IndianRupee className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                  <h4 className="font-medium text-slate-800 truncate">Avg. Prices</h4>
+                </div>
+                <ul className="text-sm text-slate-600 space-y-1">
+                  <li className="break-words">• Wheat: ₹2,450/acre</li>
+                  <li className="break-words">• Rice: ₹3,120/acre</li>
+                  <li className="break-words">• Corn: ₹1,890/acre</li>
+                </ul>
+              </div>
+              
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <BarChart3 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <h4 className="font-medium text-slate-800 truncate">Market Trends</h4>
+                </div>
+                <ul className="text-sm text-slate-600 space-y-1">
+                  <li className="break-words">• +12% vs last month</li>
+                  <li className="break-words">• 85% success rate</li>
+                  <li className="break-words">• 420 total auctions</li>
                 </ul>
               </div>
             </div>

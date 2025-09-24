@@ -23,7 +23,10 @@ const validateMockToken = (token: string) => {
     }
   }
   
-  return null;
+  // If not found by ID, check if it's a timestamp-based ID
+  // For timestamp-based IDs, we need to extract the user by phone
+  // Since we're using demo phone, let's check for that
+  return mockUsers.get('9876543210');
 };
 
 // Get user statistics (mock version)
